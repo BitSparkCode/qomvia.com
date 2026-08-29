@@ -24,7 +24,7 @@ const ENDPOINTS = [
     method: "GET",
     path: "/api/badge/<slug>",
     description:
-      "Backs the /badge.js seal embed. Returns the seal markup only for stores at grade B or better; every other store gets { earned: false }.",
+      "Backs the /badge.js seal embed. Returns the seal markup for stores scoring 60 or higher (Agent-Readable, AI Commerce Ready, AI Commerce Champion); every other store gets { earned: false }.",
   },
   {
     method: "GET",

@@ -36,7 +36,6 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
       tier: tier.id,
       title: tier.title,
       svg: sealSvg(tier, brand.domain, verifiedOn),
-      href: `/site/${brand.slug}`,
     }),
     { headers: HEADERS },
   );

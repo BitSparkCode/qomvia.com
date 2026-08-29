@@ -15,21 +15,19 @@ if(!tag){var tags=document.getElementsByTagName("script");tag=tags[tags.length-1
 if(!tag||!tag.parentNode)return;
 var slug=(tag.getAttribute("data-slug")||"").toLowerCase().replace(/[^a-z0-9-]/g,"");
 if(!slug)return;
-var anchor=tag.parentNode;
+var parent=tag.parentNode;
 var reference=tag;
 fetch(origin+"/api/badge/"+encodeURIComponent(slug)).then(function(response){
 return response.ok?response.json():null;
 }).then(function(data){
 if(!data||!data.earned||!reference.parentNode)return;
-var link=document.createElement("a");
-link.href=origin+data.href+"?ref=badge";
-link.title="Agent-commerce ready, verified by Qomvia";
-link.target="_blank";
-link.rel="noopener";
-link.style.display="inline-block";
-link.style.lineHeight="0";
-link.innerHTML=data.svg;
-anchor.insertBefore(link,reference);
+var host=document.createElement("span");
+host.setAttribute("role","img");
+host.setAttribute("aria-label",data.title+", verified by Qomvia");
+host.style.display="inline-block";
+host.style.lineHeight="0";
+host.innerHTML=data.svg;
+parent.insertBefore(host,reference);
 }).catch(function(){});
 })();
 `;

@@ -10,6 +10,7 @@ import {
   Watchlist,
 } from "@/components/dashboard-actions";
 import { CheckoutButton } from "@/components/checkout-button";
+import { Disclosure, VerdictRow } from "@/components/report";
 import { StatusIcon, verdictFromStatus } from "@/components/score";
 import { currentUser, entitlement } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -165,13 +166,27 @@ export default async function DashboardPage() {
                 <RescanButton brandId={brand.id} disabled={!premium} />
                 {failing.length > 0 ? (
                   <ul className="space-y-2 text-sm">
-                    {failing.slice(0, 8).map((signal) => (
+                    {failing.map((signal) => (
                       <li key={signal.id} className="flex items-center gap-2">
                         <StatusIcon verdict={verdictFromStatus(signal.status)} size={18} />
                         <span>{titles.get(signal.signalId) ?? signal.signalId}</span>
                       </li>
                     ))}
                   </ul>
+                ) : null}
+                {scan ? (
+                  <Disclosure summary="Every check, one by one" count={scan.signals.length}>
+                    <ul className="divide-y divide-border">
+                      {scan.signals.map((signal) => (
+                        <VerdictRow
+                          key={signal.id}
+                          verdict={verdictFromStatus(signal.status)}
+                          title={titles.get(signal.signalId) ?? signal.signalId}
+                          note={signal.detail ?? undefined}
+                        />
+                      ))}
+                    </ul>
+                  </Disclosure>
                 ) : null}
                 {premium && scan ? (
                   <Link href={`/site/${brand.slug}/report`} className="inline-block text-sm text-accent">
