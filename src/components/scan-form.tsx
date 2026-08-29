@@ -31,10 +31,6 @@ export function ScanForm({ defaultValue = "" }: { defaultValue?: string }) {
         />
         <SubmitButton />
       </div>
-      <p className="mt-2 text-xs text-muted">
-        A scan takes about 15 seconds and makes roughly 20 read-only requests. We never submit forms or attempt a
-        purchase.
-      </p>
       {state.error ? <p className="mt-2 text-sm text-bad">{state.error}</p> : null}
     </form>
   );
