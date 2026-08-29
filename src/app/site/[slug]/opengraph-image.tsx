@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { prisma } from "@/lib/db";
+import { robotHeadDataUri } from "@/lib/logo";
 import { gradeColor, SITE_NAME } from "@/lib/site";
 
 export const size = { width: 1200, height: 630 };
@@ -34,7 +35,10 @@ export default async function Image({ params }: { params: Promise<{ slug: string
           fontFamily: "sans-serif",
         }}
       >
-        <div style={{ display: "flex", fontSize: 30, color: "#8d9bad" }}>{SITE_NAME} · agent-readiness score</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 30, color: "#8d9bad" }}>
+          <img src={robotHeadDataUri(44)} width={44} height={44} alt="" />
+          {SITE_NAME} · agent-readiness score
+        </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <div style={{ display: "flex", fontSize: 64, fontWeight: 700 }}>
             {brand?.domain ?? "not scored yet"}
