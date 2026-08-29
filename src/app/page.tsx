@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RotatingWord } from "@/components/rotating-word";
 import { ScanForm } from "@/components/scan-form";
 import { prisma } from "@/lib/db";
 import { gradeColor, MONITOR_PRICE_CHF } from "@/lib/site";
@@ -28,7 +29,8 @@ export default async function HomePage() {
         <div className="space-y-6">
           <p className="eyebrow">Free score · no signup · 21 measured signals</p>
           <h1 className="font-serif text-[2.6rem] leading-[1.08] tracking-tight sm:text-[3.4rem]">
-            When ChatGPT recommends a shop, is it <em className="italic">yours</em>?
+            When <RotatingWord words={["ChatGPT", "Claude", "Perplexity", "Gemini", "Grok", "Kimi"]} /> recommends
+            a shop, is it <em className="italic">yours</em>?
           </h1>
           <p className="max-w-xl text-[1.0625rem] leading-relaxed text-muted">
             Enter your domain. We measure whether AI assistants can read your catalogue and reach your checkout — and

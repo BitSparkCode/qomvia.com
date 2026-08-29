@@ -1,6 +1,14 @@
 import { robotHeadInner, type LogoColors } from "@/lib/logo";
 
-export function Logo({ size = 28, colors }: { size?: number; colors?: LogoColors }) {
+export function Logo({
+  size = 28,
+  colors,
+  animated = true,
+}: {
+  size?: number;
+  colors?: LogoColors;
+  animated?: boolean;
+}) {
   return (
     <svg
       width={size}
@@ -9,7 +17,7 @@ export function Logo({ size = 28, colors }: { size?: number; colors?: LogoColors
       fill="none"
       role="img"
       aria-label="Qomvia"
-      dangerouslySetInnerHTML={{ __html: robotHeadInner(colors) }}
+      dangerouslySetInnerHTML={{ __html: robotHeadInner(colors, { animated }) }}
     />
   );
 }

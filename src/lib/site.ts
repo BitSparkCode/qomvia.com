@@ -12,6 +12,10 @@ export function absoluteUrl(path: string): string {
   return `${siteUrl()}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+/** Intrinsic size of the embeddable badge, shared by the SVG route and the embed snippet. */
+export const BADGE_WIDTH = 320;
+export const BADGE_HEIGHT = 76;
+
 export const MONITOR_PRICE_CHF = 29;
 export const AGENCY_PRICE_CHF = 149;
 
