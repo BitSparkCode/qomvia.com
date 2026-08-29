@@ -145,7 +145,7 @@ export default async function HomePage() {
             {
               kicker: "Free",
               title: "Your readiness score",
-              body: "Which of your product, price and checkout signals AI agents can actually use — plus a shareable badge.",
+              body: "Which of your product, price and checkout signals AI agents can actually use — and whether you qualify for the seal.",
               href: "/methodology",
               cta: "See the rubric",
             },
@@ -238,10 +238,10 @@ export default async function HomePage() {
           </Link>
         </div>
         <div className="space-y-3 sm:border-l sm:border-rule sm:pl-8">
-          <h2 className="text-xl">Scored well? Show it.</h2>
+          <h2 className="text-xl">Earn the seal</h2>
           <p className="text-sm leading-relaxed text-muted">
-            Every scored shop gets a hosted badge that reads the live score, so it can never show a number you no longer
-            hold.
+            Agent-Readable, AI Commerce Ready, AI Commerce Champion. We draw the seal at runtime, so it upgrades when you
+            improve, disappears when a deploy breaks agent access, and cannot be copied by a shop that never earned it.
           </p>
           <Link href="/leaderboard" className="link-underline text-sm">
             See who is winning

@@ -3,8 +3,8 @@
 Can AI agents actually buy from your store? Qomvia measures a storefront
 against a transparent 100-point rubric and publishes a public score page for it.
 
-- Free public score, shareable badge, leaderboard, aggregate market report.
-- CHF 99 deep audit, CHF 29/month monitoring, CHF 149/month agency plan (Stripe Checkout).
+- Free public score, earned seal, leaderboard, aggregate market report.
+- CHF 29/month monitoring, CHF 149/month agency plan (Stripe Checkout).
 - Open rubric: every point is documented at `/methodology` and every measurement
   is returned by `/api/score/<slug>`.
 
@@ -55,8 +55,9 @@ leaderboard and prints the headline statistic that `/report` publishes.
 ## Operations
 
 - `POST /api/scan` — score a domain (1 h cache per domain).
-- `GET /api/score/<slug>` — published score with every signal and its evidence.
-- `GET /badge/<slug>.svg` — live embeddable badge.
+- `GET /api/score/<slug>` — published score with every signal's status.
+- `GET /badge.js` — the only seal embed; `GET /api/badge/<slug>` returns its markup
+  for stores that qualify and `{ earned: false }` for everyone else.
 - `POST /api/cron/rescan` — weekly re-scan batch, `Authorization: Bearer $CRON_SECRET`.
   Monitored domains first, then the stalest pages; score changes create alert rows.
 - `POST /api/stripe/webhook` — payment fulfilment; a paid deep audit triggers a

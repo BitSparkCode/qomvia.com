@@ -20,7 +20,7 @@ for existing records, not sold), **Planned** (not implemented — never in site 
 | Product page | Live | `/visibility`: how LLM product visibility works, what a run measures, the index weighting and what a tracked competitor reports. |
 | Agent-compatibility breakdown | Live | Per agent class (crawler/RAG, shopping & checkout agents, MCP tool-callers, API/feed integrators, price bots): can it use this shop, and what breaks. |
 | Machine-interface detail | Live | Presence and quality of MCP endpoint, ACP/agentic checkout, product API, product feed, JSON-LD, `llms.txt`, robots/UA allowances. |
-| Embeddable badge | Live | `/badge/<slug>.svg` with the Qomvia mark, linking back to the result page. |
+| Earned seal | Live | Four tiers, no number shown: AI Commerce Champion (90+), AI Commerce Ready (75+), Agent-Readable (60+) and In Progress (40+, dashboard only, not embeddable). JavaScript-only embed (`/badge.js`), markup served per request by `/api/badge/<slug>`; nothing renders below 60, so the seal cannot be copied, faked or go stale. |
 | Leaderboard | Live | Every scored storefront, ranked; opted-out domains excluded. |
 | The index (`/report`) | Live | Aggregate state of agent readiness across all scored shops: average score, grade distribution, worst dimensions. |
 | Comparison pages | Live | `/compare/<a>-vs-<b>`: two shops side by side. |

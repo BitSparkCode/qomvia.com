@@ -258,7 +258,12 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
           <p className="text-sm">From CHF {MONITOR_PRICE_CHF} per month.</p>
           <CheckoutButton domain={brand.domain} />
         </div>
-        <BadgeSnippet slug={slug} score={scan.score ?? 0} />
+        <BadgeSnippet
+          slug={slug}
+          domain={brand.domain}
+          score={scan.score ?? 0}
+          scannedOn={scan.createdAt.toISOString().slice(0, 10)}
+        />
       </section>
 
       <p className="text-xs text-muted">
