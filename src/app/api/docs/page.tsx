@@ -22,8 +22,9 @@ const ENDPOINTS = [
   },
   {
     method: "GET",
-    path: "/badge/<slug>.svg",
-    description: "Live SVG badge for embedding. Updates automatically on every re-scan.",
+    path: "/api/badge/<slug>",
+    description:
+      "Backs the /badge.js seal embed. Returns the seal markup only for stores at grade B or better; every other store gets { earned: false }.",
   },
   {
     method: "GET",

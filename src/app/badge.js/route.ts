@@ -1,11 +1,11 @@
-import { BADGE_HEIGHT, BADGE_WIDTH, siteUrl } from "@/lib/site";
+import { siteUrl } from "@/lib/site";
 
 export const revalidate = 3600;
 
 /**
- * Loader for the `<script src="/badge.js" data-slug="…">` embed. Rendering the
- * anchor at runtime keeps the backlink and the live SVG under our control even
- * when a merchant pastes the snippet into a template they later edit.
+ * Loader for the `<script src="/badge.js" data-slug="…">` embed. The seal only
+ * exists as markup we return at runtime, so it disappears when a shop stops
+ * qualifying and cannot be reproduced by a shop that never did.
  */
 function script(): string {
   return `(function(){
@@ -15,20 +15,22 @@ if(!tag){var tags=document.getElementsByTagName("script");tag=tags[tags.length-1
 if(!tag||!tag.parentNode)return;
 var slug=(tag.getAttribute("data-slug")||"").toLowerCase().replace(/[^a-z0-9-]/g,"");
 if(!slug)return;
+var anchor=tag.parentNode;
+var reference=tag;
+fetch(origin+"/api/badge/"+encodeURIComponent(slug)).then(function(response){
+return response.ok?response.json():null;
+}).then(function(data){
+if(!data||!data.earned||!reference.parentNode)return;
 var link=document.createElement("a");
-link.href=origin+"/site/"+slug+"?ref=badge";
-link.title="Agent-readiness score by Qomvia";
+link.href=origin+data.href+"?ref=badge";
+link.title="Agent-commerce ready, verified by Qomvia";
 link.target="_blank";
 link.rel="noopener";
-var image=document.createElement("img");
-image.src=origin+"/badge/"+slug+".svg";
-image.alt="Qomvia agent-readiness score";
-image.width=${BADGE_WIDTH};
-image.height=${BADGE_HEIGHT};
-image.loading="lazy";
-image.style.border="0";
-link.appendChild(image);
-tag.parentNode.insertBefore(link,tag);
+link.style.display="inline-block";
+link.style.lineHeight="0";
+link.innerHTML=data.svg;
+anchor.insertBefore(link,reference);
+}).catch(function(){});
 })();
 `;
 }

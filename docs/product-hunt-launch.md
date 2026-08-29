@@ -33,7 +33,7 @@ The second half is visibility: import your catalogue (Shopify, feed URL or CSV) 
 
 The crawler is deliberately boring: GET/HEAD only, no forms, no add-to-cart, no purchases, no login, no bot-challenge bypass. The rubric is published, and any shop can opt out.
 
-Free: your score, your public page, an embeddable badge. Paid: the fix report, re-scans, catalogue import and weekly LLM visibility monitoring.
+Free: your score, your public page, and the seal if you earn one. Paid: the fix report, re-scans, catalogue import and weekly LLM visibility monitoring.
 
 I would love to hear: what would make you act on a bad score — the number, the lost-revenue estimate, or seeing a competitor recommended instead of you?
 
@@ -47,7 +47,7 @@ I would love to hear: what would make you act on a bad score — the number, the
 - Catalogue import from Shopify, product feed or CSV
 - Weekly refresh (daily on agency plans), history and trend per phrase
 - Paid fix report with the remediation order, evidence and copy-paste markup
-- Embeddable badge that updates on every re-scan
+- Earned seal in four tiers (AI Commerce Champion 90+, AI Commerce Ready 75+, Agent-Readable 60+, In Progress 40+ dashboard-only), served as runtime markup so it cannot be faked or go stale
 - Published rubric, opt-out, read-only crawler
 
 ## Gallery (6 assets)

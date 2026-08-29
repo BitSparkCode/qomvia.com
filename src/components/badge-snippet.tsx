@@ -1,34 +1,63 @@
-import { BADGE_HEIGHT, BADGE_WIDTH, absoluteUrl } from "@/lib/site";
+import { SEAL_TIERS, embeddableTier, nextTier, sealSvg, sealTier } from "@/lib/badge";
+import { absoluteUrl } from "@/lib/site";
 
-export function BadgeSnippet({ slug, score }: { slug: string; score: number }) {
-  const badgeUrl = absoluteUrl(`/badge/${slug}.svg`);
-  const pageUrl = absoluteUrl(`/site/${slug}`);
-  // The badge carries the Qomvia mark and links back to the score page, which is
-  // what turns every proud merchant into a backlink.
+export function BadgeSnippet({
+  slug,
+  domain,
+  score,
+  scannedOn,
+}: {
+  slug: string;
+  domain: string;
+  score: number;
+  scannedOn: string;
+}) {
+  const tier = sealTier(score);
+  const embeddable = embeddableTier(score);
+  const next = nextTier(score);
   const script = `<script src="${absoluteUrl("/badge.js")}" data-slug="${slug}" async></script>`;
-  const fallback = `<a href="${pageUrl}" title="Agent-readiness score by Qomvia" target="_blank" rel="noopener"><img src="${badgeUrl}" alt="Qomvia agent-readiness score" width="${BADGE_WIDTH}" height="${BADGE_HEIGHT}"></a>`;
 
   return (
-    <div className="panel p-5">
-      <h2 className="font-semibold">Embed the badge</h2>
-      <p className="mt-2 text-sm text-muted">
-        The badge updates automatically on every re-scan, so it always shows your current score.
-      </p>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={`/badge/${slug}.svg`}
-        alt={`Agent-readiness score ${score} out of 100`}
-        width={BADGE_WIDTH}
-        height={BADGE_HEIGHT}
-        className="mt-4"
-      />
-      <pre className="mt-4 overflow-x-auto border border-border bg-background p-3 text-[11px] text-muted">
-        <code>{script}</code>
-      </pre>
-      <p className="mt-3 text-xs text-muted">Without JavaScript, paste this instead:</p>
-      <pre className="mt-2 overflow-x-auto border border-border bg-background p-3 text-[11px] text-muted">
-        <code>{fallback}</code>
-      </pre>
+    <div className="border-t-2 border-foreground pt-4">
+      <p className="eyebrow">The seal</p>
+      <h2 className="mt-2 font-serif text-2xl">{embeddable ? embeddable.title : "Not yet certified"}</h2>
+
+      {embeddable ? (
+        <>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            {embeddable.claim} Paste this line where you want the seal: it is drawn at runtime, so it upgrades itself when
+            you improve and removes itself if a deploy closes the shop to agents.
+          </p>
+          <div
+            className="mt-4"
+            /* Our own generated markup, not merchant input. */
+            dangerouslySetInnerHTML={{ __html: sealSvg(embeddable, domain, scannedOn) }}
+          />
+          <pre className="mt-4 overflow-x-auto border border-border bg-background p-3 text-[11px] text-muted">
+            <code>{script}</code>
+          </pre>
+          <p className="mt-3 text-xs text-muted">
+            There is no image URL and no static version. The seal exists only as markup we serve per request, which is
+            what makes it worth displaying.
+          </p>
+        </>
+      ) : (
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          {tier ? `${domain} is ${tier.title.toLowerCase()}: ${tier.claim}` : `${domain} is closed to agents today.`}{" "}
+          {next ? `Reach ${next.threshold}/100 to earn ${next.title} and display it on your storefront.` : null}
+        </p>
+      )}
+
+      <ul className="mt-4 divide-y divide-border text-xs text-muted">
+        {SEAL_TIERS.map((entry) => (
+          <li key={entry.id} className="flex items-baseline justify-between gap-3 py-1.5">
+            <span style={entry.id === embeddable?.id ? { color: entry.ink } : undefined}>{entry.title}</span>
+            <span className="tabular">
+              {entry.threshold}+{entry.embeddable ? "" : " · dashboard only"}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -19,7 +19,7 @@ const TIERS = [
       "Agent-readiness score and grade",
       "Every signal as ✓ / ! / ✕",
       "Agent-by-agent compatibility",
-      "Embeddable badge",
+      "Earned \u201cAI Commerce Ready\u201d seal",
     ],
   },
   {
@@ -54,7 +54,7 @@ const TIERS = [
 ];
 
 const MATRIX: { label: string; free: string; monitor: string; agency: string }[] = [
-  { label: "Public score, grade and badge", free: "✓", monitor: "✓", agency: "✓" },
+  { label: "Public score, grade and earned seal", free: "✓", monitor: "✓", agency: "✓" },
   { label: "Fix report: what to change, and the file to paste", free: "—", monitor: "✓", agency: "✓" },
   { label: "Readiness re-scans", free: "—", monitor: "Weekly", agency: "Daily" },
   {
