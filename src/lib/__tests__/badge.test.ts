@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { embeddableTier, nextTier, sealSvg, sealTier } from "@/lib/badge";
+import { embeddableTier, nextEmbeddableTier, nextTier, sealSvg, sealTier } from "@/lib/badge";
 
 describe("seal tiers", () => {
   it("awards the highest tier reached", () => {
@@ -60,5 +60,14 @@ describe("badge.js loader", () => {
     expect(source).not.toContain('createElement("a")');
     expect(source).not.toContain(".href=");
     expect(source).not.toContain(".target=");
+  });
+});
+
+describe("unearned seal preview", () => {
+  it("previews the lowest displayable seal, never a dashboard-only one", () => {
+    expect(nextEmbeddableTier(20)?.id).toBe("readable");
+    expect(nextEmbeddableTier(61)?.id).toBe("ready");
+    expect(nextEmbeddableTier(76)?.id).toBe("champion");
+    expect(nextEmbeddableTier(95)).toBeNull();
   });
 });

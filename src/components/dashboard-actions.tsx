@@ -7,6 +7,7 @@ import {
   attachStoreAction,
   claimStoreAction,
   detachStoreAction,
+  retryImportAction,
   importProductsAction,
   removeCompetitorAction,
   logoutAction,
@@ -313,6 +314,7 @@ export function StoreAttacher({ budget }: { budget: { used: number; allowance: n
 
 export function StoreList({ stores }: { stores: AttachedStore[] }) {
   const [state, formAction] = useActionState<FormState, FormData>(detachStoreAction, {});
+  const [retryState, retryAction] = useActionState<FormState, FormData>(retryImportAction, {});
   if (stores.length === 0) return null;
   return (
     <div className="space-y-2">
@@ -326,13 +328,21 @@ export function StoreList({ stores }: { stores: AttachedStore[] }) {
               </span>
             </span>
             <span className="flex items-center gap-3 text-xs text-muted">
-              <span>
+              <span title={store.job?.error ?? undefined}>
                 {store.job
                   ? `${JOB_LABEL[store.job.state] ?? store.job.state}${
                       store.job.itemsImported > 0 ? ` · ${store.job.itemsImported} products` : ""
-                    }`
+                    }${store.job.error ? ` · ${store.job.error}` : ""}`
                   : "no import yet"}
               </span>
+              {store.job && store.job.state !== "done" ? (
+                <form action={retryAction}>
+                  <input type="hidden" name="brandId" value={store.brandId} />
+                  <button type="submit" className="link-underline">
+                    Resume import
+                  </button>
+                </form>
+              ) : null}
               <form action={formAction}>
                 <input type="hidden" name="brandId" value={store.brandId} />
                 <button type="submit" className="link-underline">
@@ -343,6 +353,7 @@ export function StoreList({ stores }: { stores: AttachedStore[] }) {
           </li>
         ))}
       </ul>
+      <Feedback state={retryState} />
       <Feedback state={state} />
     </div>
   );
@@ -350,12 +361,17 @@ export function StoreList({ stores }: { stores: AttachedStore[] }) {
 
 export function StoreClaim({ brandId, mailboxes }: { brandId: string; mailboxes: string[] }) {
   const [state, formAction] = useActionState<FormState, FormData>(claimStoreAction, {});
+  // The chosen mailbox has to survive the round trip: a code sent to info@ but a
+  // form showing admin@ makes the merchant look in the wrong inbox.
+  const [mailbox, setMailbox] = useState(mailboxes[0] ?? "admin");
   return (
     <form action={formAction} className="space-y-3">
       <input type="hidden" name="brandId" value={brandId} />
       <div className="flex flex-wrap gap-2">
         <select
           name="mailbox"
+          value={mailbox}
+          onChange={(event) => setMailbox(event.target.value)}
           className="border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-accent"
         >
           {mailboxes.map((mailbox) => (

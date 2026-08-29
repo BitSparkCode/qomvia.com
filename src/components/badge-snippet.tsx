@@ -1,4 +1,4 @@
-import { SEAL_TIERS, embeddableTier, nextTier, sealSvg, sealTier } from "@/lib/badge";
+import { SEAL_TIERS, embeddableTier, nextEmbeddableTier, nextTier, sealSvg, sealTier } from "@/lib/badge";
 import { absoluteUrl } from "@/lib/site";
 
 export function BadgeSnippet({
@@ -15,6 +15,7 @@ export function BadgeSnippet({
   const tier = sealTier(score);
   const embeddable = embeddableTier(score);
   const next = nextTier(score);
+  const target = nextEmbeddableTier(score);
   const script = `<script src="${absoluteUrl("/badge.js")}" data-slug="${slug}" async></script>`;
 
   return (
@@ -42,10 +43,27 @@ export function BadgeSnippet({
           </p>
         </>
       ) : (
-        <p className="mt-2 text-sm leading-relaxed text-muted">
-          {tier ? `${domain} is ${tier.title.toLowerCase()}: ${tier.claim}` : `${domain} is closed to agents today.`}{" "}
-          {next ? `Reach ${next.threshold}/100 to earn ${next.title} and display it on your storefront.` : null}
-        </p>
+        <>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            {tier ? `${domain} is ${tier.title.toLowerCase()}: ${tier.claim}` : `${domain} is closed to agents today.`}{" "}
+            {next ? `Reach ${next.threshold}/100 to earn ${next.title} and display it on your storefront.` : null}
+          </p>
+          {target ? (
+            <div className="mt-4">
+              {/* Greyed out on purpose: the seal a shop has not earned is shown as
+                  the goal, never as something it can copy. */}
+              <div
+                aria-hidden
+                className="w-fit select-none opacity-45 grayscale"
+                dangerouslySetInnerHTML={{ __html: sealSvg(target, domain, "not yet earned") }}
+              />
+              <p className="mt-2 text-xs text-muted">
+                Preview of {target.title}, greyed out until {domain} scores {target.threshold}/100. There is no embed code
+                until it is earned.
+              </p>
+            </div>
+          ) : null}
+        </>
       )}
 
       <ul className="mt-4 divide-y divide-border text-xs text-muted">

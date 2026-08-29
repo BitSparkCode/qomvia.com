@@ -1,3 +1,4 @@
+import * as cheerio from "cheerio";
 import { prisma } from "@/lib/db";
 import { safeFetch } from "@/lib/http";
 import { extractJsonLd, findByType } from "@/lib/rubric/extract";
@@ -15,7 +16,7 @@ import {
 export const MAX_WATCHED_PRODUCTS = 200;
 
 const MAX_ATTEMPTS = 3;
-const MAX_PRODUCT_PAGES = 60;
+const PAGES_PER_RUN = 12;
 
 export type JobState = "queued" | "discovering" | "fetching" | "parsing" | "done" | "failed";
 
@@ -93,10 +94,64 @@ function looksLikeProductUrl(url: string): boolean {
   return /\/(products?|produkt|produkte|artikel|shop|p)\//i.test(url);
 }
 
-/** Walks a sitemap (index included) for product URLs, then reads JSON-LD off each page. */
+/**
+ * A shop without JSON-LD still has a title and a price on the page. Reading
+ * those is worse data than a feed, but "no structured data" is exactly the
+ * catalogue a competitor most often has, and an empty import tells nobody
+ * anything.
+ */
+export function fromHtml(url: string, html: string): ParsedProduct | null {
+  const $ = cheerio.load(html);
+  const meta = (selector: string) => $(selector).attr("content")?.trim() || undefined;
+  const title =
+    meta('meta[property="og:title"]') ??
+    stripHtml($("h1").first().text()) ??
+    stripHtml($("title").first().text());
+  if (!title) return null;
+
+  const priceText =
+    meta('meta[property="product:price:amount"]') ??
+    meta('meta[itemprop="price"]') ??
+    $('[itemprop="price"]').first().attr("content") ??
+    $('[itemprop="price"]').first().text() ??
+    $('[class*="price" i]').first().text();
+
+  return {
+    externalId: url,
+    title,
+    description: meta('meta[name="description"]') ?? meta('meta[property="og:description"]'),
+    priceCents: parsePriceCents(priceText),
+    currency: parseCurrency(
+      meta('meta[property="product:price:currency"]') ?? meta('meta[itemprop="priceCurrency"]') ?? priceText,
+    ),
+    url,
+    imageUrl: meta('meta[property="og:image"]'),
+  };
+}
+
+export function fromJsonLd(url: string, html: string): ParsedProduct | null {
+  for (const node of findByType(extractJsonLd(html), "Product")) {
+    const title = stripHtml(node.name);
+    if (!title) continue;
+    const offer = Array.isArray(node.offers) ? node.offers[0] : node.offers;
+    const offerRecord = offer && typeof offer === "object" ? (offer as Record<string, unknown>) : {};
+    return {
+      externalId: url,
+      title,
+      description: stripHtml(node.description),
+      priceCents: parsePriceCents(offerRecord.price),
+      currency: parseCurrency(offerRecord.priceCurrency),
+      gtin: typeof node.gtin13 === "string" ? node.gtin13 : undefined,
+      url,
+    };
+  }
+  return null;
+}
+
+/** Walks a sitemap (index included) for product URLs, then reads each page. */
 async function fromSitemap(startUrl: string, budget: number, skip: (url: string) => boolean) {
   const root = await safeFetch(startUrl, { accept: "application/xml,text/xml" });
-  if (!root.ok) return { found: 0, products: [] as ParsedProduct[] };
+  if (!root.ok) return { found: 0, pending: 0, products: [] as ParsedProduct[] };
 
   let urls = locations(root.body);
   if (root.body.includes("<sitemapindex")) {
@@ -109,32 +164,18 @@ async function fromSitemap(startUrl: string, budget: number, skip: (url: string)
   }
 
   const productUrls = urls.filter(looksLikeProductUrl);
-  const pending = productUrls.filter((url) => !skip(url)).slice(0, Math.min(budget, MAX_PRODUCT_PAGES));
+  const outstanding = productUrls.filter((url) => !skip(url));
+  const batch = outstanding.slice(0, Math.min(budget, PAGES_PER_RUN));
   const products: ParsedProduct[] = [];
 
-  for (const url of pending) {
+  for (const url of batch) {
     const page = await safeFetch(url);
     if (!page.ok) continue;
-    const nodes = findByType(extractJsonLd(page.body), "Product");
-    for (const node of nodes) {
-      const title = stripHtml(node.name);
-      if (!title) continue;
-      const offer = Array.isArray(node.offers) ? node.offers[0] : node.offers;
-      const offerRecord = offer && typeof offer === "object" ? (offer as Record<string, unknown>) : {};
-      products.push({
-        externalId: url,
-        title,
-        description: stripHtml(node.description),
-        priceCents: parsePriceCents(offerRecord.price),
-        currency: parseCurrency(offerRecord.priceCurrency),
-        gtin: typeof node.gtin13 === "string" ? node.gtin13 : undefined,
-        url,
-      });
-      break;
-    }
+    const product = fromJsonLd(url, page.body) ?? fromHtml(url, page.body);
+    if (product) products.push(product);
   }
 
-  return { found: productUrls.length, products };
+  return { found: productUrls.length, pending: outstanding.length, products };
 }
 
 async function process(jobId: string): Promise<void> {
@@ -157,14 +198,31 @@ async function process(jobId: string): Promise<void> {
     const existing = await prisma.product.findMany({ where: { brandId: job.brandId }, select: { externalId: true } });
     const seen = new Set(existing.map((row) => row.externalId));
     const budget = Math.max(job.maxProducts - seen.size, 0);
-    const { found, products } = await fromSitemap(source.url, budget, (url) => seen.has(url));
+    const { found, pending, products } = await fromSitemap(source.url, budget, (url) => seen.has(url));
     await advance(jobId, "parsing", { itemsFound: found });
-    const imported = await persist(job.brandId, "jsonld", products, budget);
+    const imported = await persist(job.brandId, products[0] ? "page" : "sitemap", products, budget);
     const total = seen.size + imported;
-    await advance(jobId, total >= Math.min(found, job.maxProducts) ? "done" : "queued", {
-      itemsImported: total,
-      finishedAt: total >= Math.min(found, job.maxProducts) ? new Date() : null,
-    });
+    const complete = budget === 0 || pending <= PAGES_PER_RUN || total >= job.maxProducts;
+
+    if (complete) {
+      await advance(jobId, total > 0 ? "done" : "failed", {
+        itemsImported: total,
+        error: total > 0 ? null : "No product data found on the product pages.",
+        finishedAt: new Date(),
+      });
+      return;
+    }
+    // A pass that read pages but stored nothing will not do better on retry;
+    // saying so beats a queue entry that never moves again.
+    if (imported === 0 && job.attempts + 1 >= MAX_ATTEMPTS) {
+      await advance(jobId, "failed", {
+        itemsImported: total,
+        error: "No product data found on the product pages.",
+        finishedAt: new Date(),
+      });
+      return;
+    }
+    await advance(jobId, "queued", { itemsImported: total, attempts: imported > 0 ? 0 : job.attempts + 1 });
     return;
   }
 
@@ -185,34 +243,60 @@ async function process(jobId: string): Promise<void> {
 }
 
 /**
- * Drains one job. Claiming is a conditional update, so two workers (a cron tick
+ * Runs one job. Claiming is a conditional update, so two workers (a cron tick
  * and a dashboard click) cannot run the same job twice.
  */
+async function runImportJob(jobId: string): Promise<string | null> {
+  const claimed = await prisma.importJob.updateMany({
+    where: { id: jobId, state: "queued" },
+    data: { state: "discovering" },
+  });
+  if (claimed.count === 0) return null;
+
+  try {
+    await process(jobId);
+  } catch (error) {
+    const job = await prisma.importJob.findUnique({ where: { id: jobId }, select: { attempts: true } });
+    const exhausted = (job?.attempts ?? MAX_ATTEMPTS) >= MAX_ATTEMPTS;
+    await advance(jobId, exhausted ? "failed" : "queued", {
+      error: (error as Error).message.slice(0, 500),
+      finishedAt: exhausted ? new Date() : null,
+    });
+  }
+  return jobId;
+}
+
 export async function runNextImportJob(): Promise<string | null> {
   const candidate = await prisma.importJob.findFirst({
     where: { state: "queued", attempts: { lt: MAX_ATTEMPTS } },
     orderBy: { createdAt: "asc" },
     select: { id: true },
   });
-  if (!candidate) return null;
+  return candidate ? runImportJob(candidate.id) : null;
+}
 
-  const claimed = await prisma.importJob.updateMany({
-    where: { id: candidate.id, state: "queued" },
-    data: { state: "discovering" },
+/** One pass for one store, so attaching shows progress without draining the queue. */
+export async function runImportForBrand(brandId: string): Promise<string | null> {
+  const candidate = await prisma.importJob.findFirst({
+    where: { brandId, state: "queued" },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
   });
-  if (claimed.count === 0) return null;
+  return candidate ? runImportJob(candidate.id) : null;
+}
 
-  try {
-    await process(candidate.id);
-  } catch (error) {
-    const job = await prisma.importJob.findUnique({ where: { id: candidate.id }, select: { attempts: true } });
-    const exhausted = (job?.attempts ?? MAX_ATTEMPTS) >= MAX_ATTEMPTS;
-    await advance(candidate.id, exhausted ? "failed" : "queued", {
-      error: (error as Error).message.slice(0, 500),
-      finishedAt: exhausted ? new Date() : null,
-    });
-  }
-  return candidate.id;
+/** Puts a stalled or failed import back in the queue for another pass. */
+export async function retryImport(brandId: string): Promise<void> {
+  const job = await prisma.importJob.findFirst({
+    where: { brandId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+  if (!job) return;
+  await prisma.importJob.update({
+    where: { id: job.id },
+    data: { state: "queued", attempts: 0, error: null, finishedAt: null },
+  });
 }
 
 export async function importJobs(brandId: string, limit = 3) {

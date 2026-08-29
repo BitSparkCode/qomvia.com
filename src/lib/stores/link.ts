@@ -81,8 +81,28 @@ export async function attachStore(userId: string, input: string, kind: StoreKind
   };
 }
 
+/**
+ * Detaching removes what the account added: the link, the competitor rows it
+ * created on the account's own stores, and — only when nobody else keeps the
+ * store — the scraped catalogue and its import job.
+ */
 export async function detachStore(userId: string, brandId: string): Promise<void> {
+  const brand = await prisma.brand.findUnique({ where: { id: brandId }, select: { domain: true } });
   await prisma.storeLink.deleteMany({ where: { userId, brandId } });
+
+  if (brand) {
+    const owned = await prisma.storeLink.findMany({ where: { userId, kind: "owned" }, select: { brandId: true } });
+    await prisma.competitor.deleteMany({
+      where: { brandId: { in: owned.map((row) => row.brandId) }, domain: brand.domain },
+    });
+  }
+
+  const others = await prisma.storeLink.count({ where: { brandId } });
+  const members = await prisma.brandMember.count({ where: { brandId } });
+  if (others === 0 && members === 0) {
+    await prisma.product.deleteMany({ where: { brandId } });
+    await prisma.importJob.deleteMany({ where: { brandId } });
+  }
 }
 
 export async function storeLinks(userId: string) {
