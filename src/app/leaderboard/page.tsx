@@ -33,8 +33,7 @@ export default async function LeaderboardPage() {
         <p className="eyebrow">Ranked by measured score</p>
         <h1 className="font-serif text-4xl tracking-tight">Agent-readiness leaderboard</h1>
         <p className="max-w-2xl leading-relaxed text-muted">
-          Every score is computed from public HTTP responses with rubric v1. Anyone can re-scan a store, and every
-          failing signal is shown with the measurement behind it.
+          Who AI agents can actually read, buy from and recommend today.
         </p>
         {countries.length > 0 ? (
           <p className="text-sm text-muted">Markets covered: {countries.join(", ")}</p>

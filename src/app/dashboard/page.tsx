@@ -73,7 +73,12 @@ export default async function DashboardPage() {
           <h1 className="font-serif text-4xl tracking-tight">Your stores</h1>
           <p className="text-muted">{user.email}</p>
         </div>
-        <LogoutButton />
+        <div className="flex items-center gap-4">
+          <Link href="/methodology/signals" className="link-underline text-sm">
+            The full rubric →
+          </Link>
+          <LogoutButton />
+        </div>
       </header>
 
       {stores.length === 0 ? (

@@ -27,7 +27,7 @@ export async function GET() {
 ## What you can do here
 - Score any storefront: POST ${absoluteUrl("/api/scan")} with {"domain": "example.com"}
 - Read a published score: GET ${absoluteUrl("/api/score/<slug>")}
-- Full rubric and measurement rules: ${absoluteUrl("/methodology")}
+- Measurement rules: ${absoluteUrl("/methodology")}
 - Aggregate market statistics: ${absoluteUrl("/report")}
 - Crawler policy: ${absoluteUrl("/bot")}
 - Remove a store from the index: ${absoluteUrl("/opt-out")}

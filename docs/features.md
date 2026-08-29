@@ -23,7 +23,7 @@ for existing records, not sold), **Planned** (not implemented — never in site 
 | The index (`/report`) | Live | Aggregate state of agent readiness across all scored shops: average score, grade distribution, worst dimensions. |
 | Comparison pages | Live | `/compare/<a>-vs-<b>`: two shops side by side. |
 | Public JSON API | Live | `/api/score/<slug>` returns the current score, grade and signal statuses. Free to cite. |
-| Methodology | Live | Full published rubric, request budget, and what the crawler never does. |
+| Methodology | Live | Public page states what is scored (six categories), the grade bands and what the crawler never does. The signal-by-signal rubric with weights lives behind login at `/methodology/signals`. |
 | Crawler transparency | Live | `/bot`: QomviaBot identity, GET/HEAD only, rate limits, no forms, no cart, no login, no CAPTCHA bypass. |
 | Opt-out | Live | `/opt-out`: verified by an email address at the domain; removes the shop from the public index. |
 | SEO/GEO infrastructure | Live | Server-rendered pages with real measurements, per-page metadata, canonicals, `Dataset` JSON-LD, dynamic OG images, dated sitemap, `llms.txt`, IndexNow submission on every new scan. |
