@@ -62,6 +62,12 @@ export function nextTier(score: number | null | undefined): SealTier | null {
   return above.length ? above[above.length - 1] : null;
 }
 
+/** The lowest seal a shop could actually display, so an unearned one can be previewed as a goal. */
+export function nextEmbeddableTier(score: number | null | undefined): SealTier | null {
+  const reachable = SEAL_TIERS.filter((tier) => tier.embeddable && tier.threshold > (score ?? 0));
+  return reachable.length ? reachable[reachable.length - 1] : null;
+}
+
 const FONT = "ui-sans-serif,system-ui,-apple-system,Segoe UI,Helvetica,Arial,sans-serif";
 
 function escapeXml(value: string): string {

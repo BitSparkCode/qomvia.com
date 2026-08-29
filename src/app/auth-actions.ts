@@ -6,7 +6,7 @@ import { createLoginToken, currentUser, endSession, entitlement, normalizeEmail 
 import { loginLink, sendLoginEmail } from "@/lib/email";
 import { prisma } from "@/lib/db";
 import { importFromCsv, importFromShopifyDomain, importFromUrl } from "@/lib/products/import";
-import { runNextImportJob } from "@/lib/products/jobs";
+import { retryImport, runImportForBrand } from "@/lib/products/jobs";
 import { confirmDomainClaim, startDomainClaim } from "@/lib/stores/claim";
 import { attachStore, detachStore } from "@/lib/stores/link";
 import { RESCAN_COOLDOWN_MS, scanDomain } from "@/lib/scan-service";
@@ -43,12 +43,28 @@ export async function attachStoreAction(_state: FormState, formData: FormData): 
   const result = await attachStore(user.id, String(formData.get("domain") ?? ""), kind);
   if ("error" in result) return { error: result.error };
 
-  // Vercel's Hobby plan allows one cron a day, so the queue is also drained here.
-  for (let index = 0; index < 3; index += 1) {
-    if (!(await runNextImportJob())) break;
-  }
+  // One bounded pass, so the merchant sees products immediately; the rest of a
+  // large catalogue is picked up by the cron instead of stalling this request.
+  await runImportForBrand(result.brandId);
   revalidatePath("/dashboard");
   return { ok: result.ok };
+}
+
+export async function retryImportAction(_state: FormState, formData: FormData): Promise<FormState> {
+  const user = await currentUser();
+  if (!user) return { error: "Sign in first." };
+
+  const brandId = String(formData.get("brandId") ?? "");
+  const link = await prisma.storeLink.findUnique({
+    where: { userId_brandId: { userId: user.id, brandId } },
+    select: { id: true },
+  });
+  if (!link) return { error: "This store is not on your account." };
+
+  await retryImport(brandId);
+  await runImportForBrand(brandId);
+  revalidatePath("/dashboard");
+  return { ok: "Import resumed." };
 }
 
 export async function detachStoreAction(_state: FormState, formData: FormData): Promise<FormState> {
