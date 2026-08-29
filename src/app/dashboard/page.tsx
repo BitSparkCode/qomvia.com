@@ -20,11 +20,14 @@ import { prisma } from "@/lib/db";
 import { importJobs } from "@/lib/products/jobs";
 import { CLAIM_MAILBOXES } from "@/lib/stores/claim";
 import { storeLinks, watchedStoreBudget } from "@/lib/stores/link";
+import { ProductVisibilityList } from "@/components/product-visibility";
 import { SIGNALS } from "@/lib/rubric/signals";
 import { creditBalance } from "@/lib/visibility/credits";
 import { competitorAllowance, trackedCompetitors } from "@/lib/visibility/competitors";
 import { COMPETITOR_PRICE_CHF, CREDIT_PACKS, VISIBILITY_PLANS } from "@/lib/visibility/plans";
 import type { Recommendation } from "@/lib/visibility/recommend";
+import { isAdminEmail } from "@/lib/admin";
+import { productVisibility } from "@/lib/visibility/overview";
 import { latestRun, runHistory, topCompetitors } from "@/lib/visibility/run";
 
 export const dynamic = "force-dynamic";
@@ -77,6 +80,7 @@ export default async function DashboardPage() {
       const watched = await trackedCompetitors(membership.brandId);
       const competitorSlots = await competitorAllowance(membership.brandId);
       const credits = await creditBalance(membership.brandId);
+      const productAnswers = access?.premium ? await productVisibility(membership.brandId, 25) : [];
       return {
         brand: membership.brand,
         access,
@@ -89,6 +93,7 @@ export default async function DashboardPage() {
         watched,
         competitorSlots,
         credits,
+        productAnswers,
       };
     }),
   );
@@ -112,6 +117,7 @@ export default async function DashboardPage() {
   const unverified = attached.filter((store) => store.kind === "owned" && !store.verified);
 
   const titles = new Map(SIGNALS.map((signal) => [signal.id, signal.title]));
+  const admin = isAdminEmail(user.email);
 
   return (
     <div className="space-y-10">
@@ -121,6 +127,11 @@ export default async function DashboardPage() {
           <p className="text-muted">{user.email}</p>
         </div>
         <div className="flex items-center gap-4">
+          {admin ? (
+            <Link href="/admin" className="link-underline text-sm">
+              Admin →
+            </Link>
+          ) : null}
           <Link href="/methodology/signals" className="link-underline text-sm">
             The full rubric →
           </Link>
@@ -175,6 +186,7 @@ export default async function DashboardPage() {
           watched,
           competitorSlots,
           credits,
+          productAnswers,
         }) => {
         const premium = access?.premium ?? false;
         const plan = access && access.tier !== "AUDIT" && access.tier !== "NONE" ? VISIBILITY_PLANS[access.tier] : null;
@@ -323,6 +335,18 @@ export default async function DashboardPage() {
                       </dd>
                     </div>
                   </dl>
+
+                  {productAnswers.length > 0 ? (
+                    <div>
+                      <h4 className="text-sm font-semibold">Per product: who the models named</h4>
+                      <p className="mt-1 text-xs text-muted">
+                        Least visible products first, with the answer each verdict was read from.
+                      </p>
+                      <div className="mt-3">
+                        <ProductVisibilityList products={productAnswers} />
+                      </div>
+                    </div>
+                  ) : null}
 
                   {recommendations.length > 0 ? (
                     <div>

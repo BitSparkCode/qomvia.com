@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ProductVisibilityList } from "@/components/product-visibility";
 import { ScanForm } from "@/components/scan-form";
 import { absoluteUrl, AGENCY_PRICE_CHF, MONITOR_PRICE_CHF } from "@/lib/site";
 import { VISIBILITY_PLANS } from "@/lib/visibility/plans";
+import { SAMPLE_PRODUCTS } from "@/lib/visibility/sample";
 
 export const metadata: Metadata = {
   title: "LLM product visibility",
@@ -98,6 +100,25 @@ export default function VisibilityPage() {
             </li>
           ))}
         </ol>
+      </section>
+
+      <section className="space-y-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-rule pb-2">
+          <h2 className="text-2xl">What you get back, per product</h2>
+          <p className="text-xs text-muted">Sample output · shop anonymised</p>
+        </div>
+        <p className="max-w-2xl text-sm leading-relaxed text-muted">
+          This is the deliverable, not a mock-up: every tracked product with the answer each model gave, the position
+          it was listed at, the shop recommended instead, and the change that would win the answer back.
+        </p>
+        <ProductVisibilityList products={SAMPLE_PRODUCTS} />
+        <p className="text-xs text-muted">
+          Your own catalogue, your markets and your competitors —{" "}
+          <Link href="/login" className="link-underline">
+            attach your shop
+          </Link>{" "}
+          to run it.
+        </p>
       </section>
 
       <section className="grid gap-10 lg:grid-cols-[1fr_1fr] lg:gap-16">
