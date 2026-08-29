@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { NAV_DIRECT, NAV_GROUPS } from "@/lib/nav";
+import { useSignedIn } from "@/lib/use-signed-in";
 
 export function SiteNav() {
   const [open, setOpen] = useState<string | null>(null);
@@ -11,6 +12,8 @@ export function SiteNav() {
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
   const [shownPath, setShownPath] = useState(pathname);
+  const signedIn = useSignedIn();
+  const account = signedIn ? { href: "/dashboard", label: "Dashboard" } : { href: "/login", label: "Sign in" };
 
   if (shownPath !== pathname) {
     setShownPath(pathname);
@@ -93,10 +96,10 @@ export function SiteNav() {
           </Link>
         ))}
         <Link
-          href="/dashboard"
+          href={account.href}
           className="ml-2 border border-foreground px-3 py-1.5 text-xs tracking-wide uppercase hover:bg-foreground hover:text-background"
         >
-          Sign in
+          {account.label}
         </Link>
       </nav>
 
@@ -132,8 +135,8 @@ export function SiteNav() {
                 {link.label}
               </Link>
             ))}
-            <Link href="/dashboard" className="btn ml-auto">
-              Sign in
+            <Link href={account.href} className="btn ml-auto">
+              {account.label}
             </Link>
           </div>
         </div>
