@@ -26,7 +26,7 @@ export default function MethodologyPage() {
       <section className="space-y-3 rounded-xl border border-border bg-surface p-5">
         <h2 className="font-semibold">What the crawler does and does not do</h2>
         <ul className="list-disc space-y-1 pl-5 text-sm text-muted">
-          <li>Identifies itself as <code className="text-foreground">AgentCommerceBot/1.0</code> with a link to this page.</li>
+          <li>Identifies itself as <code className="text-foreground">QomviaBot/1.0</code> with a link to this page.</li>
           <li>Issues only GET requests: roughly 20 for a public scan, up to 500 for a paid deep audit.</li>
           <li>Never submits a form, never adds to a cart, never attempts a purchase.</li>
           <li>Never tries to defeat a CAPTCHA or bot challenge — a challenge is recorded as a finding and nothing more.</li>
@@ -83,7 +83,7 @@ export default function MethodologyPage() {
         <p className="text-sm text-muted">
           Scores are a snapshot of what our crawler received at a point in time. Anyone can trigger a free re-scan from
           the homepage once per hour, and every signal shows the measurement behind it so a result can be reproduced with
-          curl. If you believe a measurement is wrong, email corrections@agent-commerce.io with the signal id and we will
+          curl. If you believe a measurement is wrong, email corrections@qomvia.com with the signal id and we will
           re-run and publish the result. Store owners can remove their public page entirely on the{" "}
           <Link href="/opt-out" className="text-accent">
             opt-out page

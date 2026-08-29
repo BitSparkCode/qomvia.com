@@ -2,7 +2,7 @@ import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 
 export const BOT_UA =
-  "AgentCommerceBot/1.0 (+https://agent-commerce.io/bot; readiness measurement; respects robots.txt)";
+  "QomviaBot/1.0 (+https://qomvia.com/bot; readiness measurement; respects robots.txt)";
 export const BROWSER_UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 

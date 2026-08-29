@@ -1,6 +1,6 @@
-# Agent Commerce
+# Qomvia
 
-Can AI agents actually buy from your store? Agent Commerce measures a storefront
+Can AI agents actually buy from your store? Qomvia measures a storefront
 against a transparent 100-point rubric and publishes a public score page for it.
 
 - Free public score, shareable badge, leaderboard, aggregate market report.
@@ -23,7 +23,7 @@ Grades: A 90+, B 75+, C 60+, D 40+, F below 40.
 
 ## Crawler safety
 
-`AgentCommerceBot/1.0` issues GET requests only — roughly 20 per public scan, one
+`QomviaBot/1.0` issues GET requests only — roughly 20 per public scan, one
 at a time per host, 2 MB and 15 s caps, private address ranges refused. It never
 submits a form, adds to a cart, attempts a purchase, logs in, or tries to defeat
 a CAPTCHA or bot challenge. `src/lib/__tests__/crawl-safety.test.ts` fails the

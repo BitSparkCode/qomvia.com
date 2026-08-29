@@ -61,7 +61,7 @@ export async function collect(domain: string, mode: "SHALLOW" | "DEEP" = "SHALLO
   const fetchIfAllowed = async (url: string | null) => {
     if (!url) return null;
     const path = new URL(url).pathname;
-    if (!isAllowed(robots, "AgentCommerceBot", path)) {
+    if (!isAllowed(robots, "QomviaBot", path)) {
       notes.push(`Skipped ${path}: disallowed for our crawler in robots.txt.`);
       return null;
     }

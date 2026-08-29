@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "Agent Commerce measures whether AI shopping agents can discover, read and check out on your storefront, and publishes a transparent 100-point score.",
+    "Qomvia measures whether AI shopping agents can discover, read and check out on your storefront, and publishes a transparent 100-point score.",
   openGraph: { siteName: SITE_NAME, type: "website" },
   twitter: { card: "summary_large_image" },
 };

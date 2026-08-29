@@ -14,19 +14,19 @@ const schema = z.object({
 
 const PRODUCTS = {
   deep_audit: {
-    name: "Agent Commerce deep audit",
+    name: "Qomvia deep audit",
     description: "500-URL agent-readiness audit with prioritised fixes and PDF report",
     amount: DEEP_AUDIT_PRICE_CHF * 100,
     mode: "payment" as const,
   },
   monitor: {
-    name: "Agent Commerce monitoring",
+    name: "Qomvia monitoring",
     description: "Weekly re-scan, change alerts and a live badge for one domain",
     amount: MONITOR_PRICE_CHF * 100,
     mode: "subscription" as const,
   },
   agency: {
-    name: "Agent Commerce agency plan",
+    name: "Qomvia agency plan",
     description: "25 domains, competitor tracking, API access and white-label reports",
     amount: AGENCY_PRICE_CHF * 100,
     mode: "subscription" as const,
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
   const client = stripe();
   if (!client || !stripeConfigured()) {
     return NextResponse.json(
-      { error: "Payments are not configured yet. Email hello@agent-commerce.io and we will invoice you." },
+      { error: "Payments are not configured yet. Email hello@qomvia.com and we will invoice you." },
       { status: 503 },
     );
   }

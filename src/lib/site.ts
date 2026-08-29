@@ -1,11 +1,11 @@
-export const SITE_NAME = "Agent Commerce";
+export const SITE_NAME = "Qomvia";
 export const SITE_TAGLINE = "Can AI agents actually buy from your store?";
 
 export function siteUrl(): string {
   const configured = process.env.NEXT_PUBLIC_SITE_URL;
   if (configured) return configured.replace(/\/$/, "");
   if (process.env.VERCEL_PROJECT_PRODUCTION_URL) return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
-  return "https://agent-commerce.io";
+  return "https://qomvia.com";
 }
 
 export function absoluteUrl(path: string): string {

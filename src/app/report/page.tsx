@@ -137,7 +137,7 @@ export default async function ReportPage() {
 
       <p className="text-xs text-muted">
         Journalists: the underlying per-store measurements are available as JSON at{" "}
-        <code>/api/score/&lt;slug&gt;</code>. Email press@agent-commerce.io for the full dataset.
+        <code>/api/score/&lt;slug&gt;</code>. Email press@qomvia.com for the full dataset.
       </p>
     </div>
   );

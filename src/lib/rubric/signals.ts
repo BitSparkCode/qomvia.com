@@ -84,7 +84,7 @@ export const SIGNALS: Signal[] = [
     fix: "Allowlist declared AI agents in your WAF/bot manager instead of serving them an interstitial.",
     evaluate: (context) => {
       const bot = context.botHome;
-      if (bot.error) return outcome(0, "fail", `Request as AgentCommerceBot failed: ${bot.error}.`);
+      if (bot.error) return outcome(0, "fail", `Request as QomviaBot failed: ${bot.error}.`);
       if (looksChallenged(bot.body, bot.headers, bot.status)) {
         return outcome(0, "fail", `Bot-managed response (HTTP ${bot.status}) to a declared crawler.`, {
           status: bot.status,

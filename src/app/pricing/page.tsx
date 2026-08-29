@@ -101,7 +101,7 @@ export default function PricingPage() {
           If the audit says your store cannot be transacted against, we can make it agent-buyable: a hosted product feed,
           structured-data fixes, an <code className="text-foreground">llms.txt</code>, and an agentic-checkout endpoint
           settled through your existing Stripe account, so funds never touch us. Scoped per store from CHF 1,500. Email
-          hello@agent-commerce.io with your score page.
+          hello@qomvia.com with your score page.
         </p>
       </section>
 

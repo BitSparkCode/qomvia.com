@@ -46,7 +46,7 @@ describe("safeFetch", () => {
     for (const call of calls) {
       expect(call.body).toBeUndefined();
       const headers = call.headers as Record<string, string>;
-      expect(headers["user-agent"]).toContain("AgentCommerceBot");
+      expect(headers["user-agent"]).toContain("QomviaBot");
     }
     expect(BOT_UA).toContain("respects robots.txt");
     spy.mockRestore();

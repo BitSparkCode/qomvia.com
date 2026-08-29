@@ -19,7 +19,7 @@ export default function OptOutPage() {
       </p>
       <OptOutForm />
       <p className="text-xs text-muted">
-        You can also block <code>AgentCommerceBot</code> in robots.txt, which stops the crawl but does not remove an
+        You can also block <code>QomviaBot</code> in robots.txt, which stops the crawl but does not remove an
         existing page.
       </p>
     </div>
