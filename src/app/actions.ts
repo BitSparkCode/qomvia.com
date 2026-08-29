@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { normalizeDomain } from "@/lib/http";
 import { prisma } from "@/lib/db";
 import { submitToIndexNow } from "@/lib/indexnow";
-import { latestScan, RESCAN_COOLDOWN_MS, scanDomain, upsertBrand } from "@/lib/scan-service";
+import { latestScan, scanDomain, upsertBrand } from "@/lib/scan-service";
 
 export type ScanFormState = { error?: string; ok?: string };
 
@@ -24,10 +24,11 @@ export async function scanAction(_state: ScanFormState, formData: FormData): Pro
   const brand = await upsertBrand(domain);
   if (brand.optedOut) return { error: "This domain has opted out of public scoring." };
 
+  // The first score for a domain is free; re-checks belong to the paid plans, so an
+  // already-scored domain sends the visitor to the existing page instead of re-crawling.
   const existing = await latestScan(brand.id);
-  const fresh = existing && Date.now() - existing.createdAt.getTime() < RESCAN_COOLDOWN_MS;
 
-  if (!fresh) {
+  if (!existing) {
     try {
       await scanDomain(domain);
     } catch (error) {

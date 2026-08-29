@@ -50,11 +50,13 @@ async function recordSubscription(session: Stripe.Checkout.Session) {
       stripeCustomerId: typeof session.customer === "string" ? session.customer : session.customer?.id,
       stripeSubscriptionId:
         typeof session.subscription === "string" ? session.subscription : session.subscription?.id,
+      stripeSessionId: session.id,
     },
     update: {
       status: "active",
       stripeSubscriptionId:
         typeof session.subscription === "string" ? session.subscription : session.subscription?.id,
+      stripeSessionId: session.id,
     },
   });
 }

@@ -48,6 +48,7 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
   if (!data) notFound();
   const { brand, scan, history } = data;
   const dimensions = (scan.dimensions as unknown as DimensionScore[]) ?? [];
+  const failing = scan.signals.filter((signal) => signal.status !== "pass").length;
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -141,11 +142,6 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
                         </span>
                       </div>
                       <p className="text-sm text-muted">{row.detail}</p>
-                      {row.status !== "pass" && definition ? (
-                        <p className="text-sm">
-                          <span className="text-accent">Fix:</span> {definition.fix}
-                        </p>
-                      ) : null}
                     </li>
                   );
                 })}
@@ -155,13 +151,29 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
         })}
       </section>
 
+      {failing > 0 ? (
+        <section className="rounded-xl border border-border bg-surface p-5">
+          <h2 className="font-semibold">
+            {failing} fixable {failing === 1 ? "issue" : "issues"} — fix list is in the paid report
+          </h2>
+          <p className="mt-2 text-sm text-muted">
+            The measurements above are public. The remediation detail is not: which files to publish, the exact markup
+            and headers to change, and the order that recovers the most points per hour of work. That ships in the
+            report for CHF {DEEP_AUDIT_PRICE_CHF}, together with a deep crawl of up to 500 URLs.
+          </p>
+          <div className="mt-4">
+            <DeepAuditButton domain={brand.domain} label={`Unlock the fix list — CHF ${DEEP_AUDIT_PRICE_CHF}`} />
+          </div>
+        </section>
+      ) : null}
+
       <section className="grid gap-6 sm:grid-cols-2">
         <BadgeSnippet slug={slug} score={scan.score ?? 0} />
         <div className="rounded-xl border border-border bg-surface p-5">
           <h2 className="font-semibold">Want the full picture?</h2>
           <p className="mt-2 text-sm text-muted">
             The deep audit crawls up to 500 URLs, checks every product template, compares you against three competitors
-            and returns a prioritised fix list with platform-specific instructions.
+            and returns the prioritised fix list — which files to add, which markup to change, in what order.
           </p>
           <p className="mt-3 text-sm">CHF {DEEP_AUDIT_PRICE_CHF} one-off, delivered within an hour.</p>
           <div className="mt-4">

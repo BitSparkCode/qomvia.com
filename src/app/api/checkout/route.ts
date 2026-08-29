@@ -71,7 +71,7 @@ export async function POST(request: Request) {
         },
       },
     ],
-    success_url: absoluteUrl(`/site/${brand.slug}?purchase=success&session_id={CHECKOUT_SESSION_ID}`),
+    success_url: absoluteUrl(`/site/${brand.slug}/report?session_id={CHECKOUT_SESSION_ID}`),
     cancel_url: absoluteUrl(`/site/${brand.slug}?purchase=cancelled`),
     allow_promotion_codes: true,
   });

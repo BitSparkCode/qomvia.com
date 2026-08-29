@@ -55,9 +55,6 @@ export default function MethodologyPage() {
                       <span className="font-mono text-xs text-muted">{signal.max} pts</span>
                     </div>
                     <p className="text-sm text-muted">{signal.why}</p>
-                    <p className="text-sm">
-                      <span className="text-accent">Fix:</span> {signal.fix}
-                    </p>
                     <p className="font-mono text-[11px] text-muted">signal id: {signal.id}</p>
                   </li>
                 ))}
