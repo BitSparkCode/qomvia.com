@@ -149,6 +149,36 @@ async function indexCompetitors(
   }
 }
 
+/** Per-phrase head-to-head for the domains a shop pays to watch. */
+export async function competitorFaceOff(brandId: string, runId: string) {
+  const watched = await prisma.competitor.findMany({
+    where: { brandId, tracked: true },
+    select: { name: true, domain: true },
+  });
+  if (watched.length === 0) return [];
+
+  const results = await prisma.visibilityResult.findMany({
+    where: { runId, error: null },
+    select: { mentioned: true, rank: true, competitors: true, prompt: { select: { text: true, locale: true } } },
+  });
+
+  return watched.map((competitor) => {
+    const host = (competitor.domain ?? competitor.name).replace(/^www\./, "").toLowerCase();
+    const named = results.filter((result) => (result.competitors as string[]).includes(host));
+    const beatsYou = named.filter((result) => !result.mentioned);
+    return {
+      host,
+      answers: named.length,
+      share: results.length > 0 ? named.length / results.length : 0,
+      beatsYou: beatsYou.length,
+      phrases: beatsYou.slice(0, 5).map((result) => ({
+        text: result.prompt.text,
+        locale: result.prompt.locale,
+      })),
+    };
+  });
+}
+
 export type RunOptions = { trigger?: string; plan?: VisibilityPlan };
 
 /**
@@ -173,6 +203,15 @@ export async function runVisibility(brandId: string, options: RunOptions = {}) {
   if (!brand) throw new Error("Brand not found");
 
   await syncPrompts(brandId, plan);
+
+  const watched = (
+    await prisma.competitor.findMany({
+      where: { brandId, tracked: true },
+      select: { name: true, domain: true },
+    })
+  )
+    .map((row) => ({ name: row.name, domain: row.domain ?? row.name }))
+    .filter((row) => row.domain.includes("."));
 
   const balance = await creditBalance(brandId);
   const affordable = Math.floor(balance / providers.length);
@@ -223,7 +262,7 @@ export async function runVisibility(brandId: string, options: RunOptions = {}) {
       const answer = await askCached(job.provider, job.text, job.locale, CACHE_TTL_DAYS);
       const analysis = answer.error
         ? { mentioned: false, cited: false, rank: null, competitors: [] }
-        : analyzeAnswer(answer.text, answer.citations, { name: brand.name, domain: brand.domain });
+        : analyzeAnswer(answer.text, answer.citations, { name: brand.name, domain: brand.domain }, watched);
 
       await prisma.visibilityResult.create({
         data: {

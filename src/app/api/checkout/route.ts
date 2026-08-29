@@ -4,11 +4,11 @@ import { normalizeDomain } from "@/lib/http";
 import { upsertBrand } from "@/lib/scan-service";
 import { stripe, stripeConfigured } from "@/lib/stripe";
 import { absoluteUrl, AGENCY_PRICE_CHF, MONITOR_PRICE_CHF } from "@/lib/site";
-import { CREDIT_PACKS } from "@/lib/visibility/plans";
+import { COMPETITOR_PRICE_CHF, CREDIT_PACKS } from "@/lib/visibility/plans";
 
 const schema = z.object({
   domain: z.string().min(3),
-  product: z.enum(["monitor", "agency", "pack_1000", "pack_5000"]).default("monitor"),
+  product: z.enum(["monitor", "agency", "pack_1000", "pack_5000", "competitor_slot"]).default("monitor"),
   email: z.string().email().optional(),
 });
 
@@ -23,6 +23,12 @@ const PRODUCTS = {
     name: "Qomvia agency plan",
     description: "25 domains, daily refresh, all four model providers, competitor tracking and white-label reports",
     amount: AGENCY_PRICE_CHF * 100,
+    mode: "subscription" as const,
+  },
+  competitor_slot: {
+    name: "Qomvia competitor slot",
+    description: "Watch one more competitor domain across every visibility run",
+    amount: COMPETITOR_PRICE_CHF * 100,
     mode: "subscription" as const,
   },
   pack_1000: {
@@ -78,7 +84,7 @@ export async function POST(request: Request) {
       },
     ],
     success_url:
-      product.mode === "payment"
+      product.mode === "payment" || parsed.data.product === "competitor_slot"
         ? absoluteUrl("/dashboard")
         : absoluteUrl(`/site/${brand.slug}/report?session_id={CHECKOUT_SESSION_ID}`),
     cancel_url: absoluteUrl(`/site/${brand.slug}?purchase=cancelled`),

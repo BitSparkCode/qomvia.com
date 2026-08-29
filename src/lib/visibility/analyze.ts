@@ -59,7 +59,12 @@ export function registrableHost(url: string): string | null {
  * Measures one answer: was the shop named, was it linked, in which position
  * relative to the other retailers, and which competitors took the slots.
  */
-export function analyzeAnswer(answer: string, citations: string[], brand: BrandIdentity): AnswerAnalysis {
+export function analyzeAnswer(
+  answer: string,
+  citations: string[],
+  brand: BrandIdentity,
+  watched: { name: string; domain: string }[] = [],
+): AnswerAnalysis {
   const haystack = answer.toLowerCase();
   const patterns = brandPatterns(brand).map((value) => value.toLowerCase());
 
@@ -90,10 +95,29 @@ export function analyzeAnswer(answer: string, citations: string[], brand: BrandI
     }
   }
 
+  // A watched competitor is often named without its domain ("Zalando recommends…"),
+  // so its label is matched as a word too.
+  for (const competitor of watched) {
+    const host = competitor.domain.replace(/^www\./, "").toLowerCase();
+    if (ordered.some((entry) => entry.host === host)) continue;
+    const labels = [competitor.name, host.split(".")[0]].map((value) => value.trim().toLowerCase());
+    for (const label of labels) {
+      if (label.length < 3) continue;
+      // "ochsner-sport" is written "Ochsner Sport" in prose.
+      const pattern = escape(label).replace(/-/g, "[\\s-]");
+      const match = new RegExp(`(?:^|[^a-z0-9])${pattern}(?:[^a-z0-9]|$)`).exec(haystack);
+      if (match) {
+        ordered.push({ host, index: match.index });
+        break;
+      }
+    }
+  }
+
+  const watchedHosts = new Set(watched.map((entry) => entry.domain.replace(/^www\./, "").toLowerCase()));
   const retailers: string[] = [];
   for (const entry of ordered.sort((a, b) => a.index - b.index)) {
     const label = entry.host.split(".")[0];
-    if (KNOWN_HOST_NOISE.has(label)) continue;
+    if (KNOWN_HOST_NOISE.has(label) && !watchedHosts.has(entry.host)) continue;
     if (!retailers.includes(entry.host)) retailers.push(entry.host);
   }
 

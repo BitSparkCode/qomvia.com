@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { DimensionList, ScoreDial, StatusIcon, verdictFromStatus } from "@/components/score";
+import { ScoreDial, StatusIcon, verdictFromStatus, verdictFromShare } from "@/components/score";
+import { CountStrip, Disclosure, VerdictRow } from "@/components/report";
 import { AGENT_INTERFACES, agentVerdicts, buildSignalLookup } from "@/lib/rubric/agents";
 import { BadgeSnippet } from "@/components/badge-snippet";
 import { CheckoutButton } from "@/components/checkout-button";
 import { prisma } from "@/lib/db";
+import { countFindings, findings, verdictSentence } from "@/lib/rubric/findings";
 import { SIGNALS } from "@/lib/rubric/signals";
 import { DIMENSIONS, type DimensionId, type DimensionScore } from "@/lib/rubric/types";
 import { absoluteUrl, MONITOR_PRICE_CHF, SITE_NAME } from "@/lib/site";
@@ -21,13 +23,7 @@ async function loadBrand(slug: string) {
     include: { signals: true },
   });
   if (!scan) return null;
-  const history = await prisma.scan.findMany({
-    where: { brandId: brand.id, status: "COMPLETE", isPublic: true },
-    orderBy: { createdAt: "desc" },
-    take: 6,
-    select: { score: true, grade: true, createdAt: true },
-  });
-  return { brand, scan, history };
+  return { brand, scan };
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -47,17 +43,20 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const data = await loadBrand(slug);
   if (!data) notFound();
-  const { brand, scan, history } = data;
+  const { brand, scan } = data;
   const dimensions = (scan.dimensions as unknown as DimensionScore[]) ?? [];
-  const failing = scan.signals.filter((signal) => signal.status !== "pass").length;
 
   const signalTitles = new Map(SIGNALS.map((signal) => [signal.id, signal.title]));
   const lookup = buildSignalLookup(scan.signals, signalTitles);
   const verdicts = agentVerdicts(lookup);
+  const counts = countFindings(scan.signals);
+  const breaks = findings(scan.signals).slice(0, 5);
+  const headline = verdictSentence(brand.name, verdicts);
   const interfaces = AGENT_INTERFACES.map((row) => ({
     ...row,
     verdict: verdictFromStatus(lookup.get(row.signalId)?.status ?? "unknown"),
   }));
+  const exposed = interfaces.filter((row) => row.verdict === "ok");
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -79,21 +78,21 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
   };
 
   return (
-    <div className="space-y-14">
+    <div className="space-y-12">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       <section className="border-b border-rule pb-8">
         <p className="eyebrow">Agent-readiness report · rubric v{scan.rubricVersion}</p>
-        <div className="mt-3 flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-3">
+        <div className="mt-3 grid gap-8 sm:grid-cols-[1fr_auto] sm:items-start">
+          <div className="space-y-4">
             <h1 className="font-serif text-4xl leading-tight tracking-tight">Is {brand.name} agent-ready?</h1>
+            <p className="max-w-2xl font-serif text-xl leading-snug">{headline}</p>
             <p className="text-sm text-muted">
               <a href={`https://${brand.domain}`} rel="nofollow noopener" className="link-underline">
                 {brand.domain}
               </a>
-              {brand.platform ? ` · ${brand.platform}` : ""} · scanned{" "}
-              <span className="tabular">{new Date(scan.createdAt).toISOString().slice(0, 10)}</span> ·{" "}
-              {scan.urlsFetched} read-only requests
+              {brand.platform ? ` · ${brand.platform}` : ""} · last scanned{" "}
+              <span className="tabular">{new Date(scan.createdAt).toISOString().slice(0, 10)}</span>
             </p>
             <div className="flex flex-wrap items-center gap-4 text-sm">
               <CheckoutButton domain={brand.domain} />
@@ -106,145 +105,160 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
         </div>
       </section>
 
-      <section className="grid gap-10 sm:grid-cols-2">
-        <div>
-          <h2 className="eyebrow border-b border-border pb-2">Readiness by dimension</h2>
-          <div className="mt-3">
-            <DimensionList dimensions={dimensions} />
+      <CountStrip
+        items={[
+          { label: "Blocking agents", value: counts.blockers, tone: "bad" },
+          { label: "Weak spots", value: counts.warnings, tone: "warn" },
+          { label: "Checks passed", value: `${counts.passed}/${scan.signals.length}`, tone: "ok" },
+        ]}
+      />
+
+      {breaks.length > 0 ? (
+        <section className="space-y-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-rule pb-2">
+            <h2 className="text-2xl">What costs {brand.name} the most</h2>
+            <p className="text-xs text-muted">Ordered by what agents lose first</p>
           </div>
-        </div>
-        <div>
-          <h2 className="eyebrow border-b border-border pb-2">Score history</h2>
-          {history.length <= 1 ? (
-            <p className="mt-3 text-sm text-muted">First scan. Re-scan in a month to see whether anything moved.</p>
-          ) : (
-            <ul className="mt-3 divide-y divide-border text-sm">
-              {history.map((entry) => (
-                <li key={entry.createdAt.toISOString()} className="flex justify-between py-2.5 first:pt-0">
-                  <span className="tabular text-muted">{entry.createdAt.toISOString().slice(0, 10)}</span>
-                  <span className="tabular">
-                    {entry.score} ({entry.grade})
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </section>
-
-      <section className="space-y-6">
-        <h2 className="border-b border-rule pb-2 text-2xl">What we measured</h2>
-        {(Object.keys(DIMENSIONS) as DimensionId[]).map((dimensionId) => {
-          const rows = scan.signals.filter((signal) => signal.dimension === dimensionId);
-          if (rows.length === 0) return null;
-          return (
-            <div key={dimensionId}>
-              <h3 className="eyebrow border-b border-border pb-2">{DIMENSIONS[dimensionId].label}</h3>
-              <ul className="divide-y divide-border">
-                {rows.map((row) => {
-                  const definition = SIGNALS.find((signal) => signal.id === row.signalId);
-                  return (
-                    <li key={row.id} className="flex flex-wrap items-center gap-3 py-2.5 text-sm">
-                      <StatusIcon verdict={verdictFromStatus(row.status)} />
-                      <span>{definition?.title ?? row.signalId}</span>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          );
-        })}
-      </section>
-
-      <section className="space-y-6">
-        <div className="space-y-2">
-          <h2 className="border-b border-rule pb-2 text-2xl">Which AI agents can use {brand.name}?</h2>
-          <p className="max-w-3xl text-sm leading-relaxed text-muted">
-            Not every agent needs the same things. A research agent only has to read the page; a shopping agent has to
-            reach a payable checkout; an MCP client needs a tool endpoint to call. Below is what {brand.domain} supports
-            per class of agent, measured from public HTTP responses.
-          </p>
-        </div>
-        <div className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
-          {verdicts.map(({ agent, verdict, met, missing, degraded }) => (
-            <article key={agent.id} className="space-y-3 border-t border-border pt-4">
-              <div className="flex items-start gap-3">
-                <StatusIcon verdict={verdict} size={22} />
-                <div>
-                  <h3 className="font-serif text-lg leading-snug">{agent.label}</h3>
-                  <p className="text-xs text-muted">{agent.examples}</p>
+          <ol className="divide-y divide-border">
+            {breaks.map((finding) => (
+              <li key={finding.row.id} className="grid gap-1 py-4 sm:grid-cols-[auto_1fr] sm:gap-4">
+                <StatusIcon verdict={verdictFromStatus(finding.status)} size={22} />
+                <div className="space-y-1">
+                  <h3 className="font-serif text-lg leading-snug">{finding.title}</h3>
+                  <p className="max-w-2xl text-sm leading-relaxed text-muted">{finding.signal?.consequence}</p>
                 </div>
-              </div>
-              <p className="text-sm leading-relaxed text-muted">{agent.description}</p>
-              <p className="text-sm leading-relaxed">
-                {verdict === "ok"
-                  ? agent.worksNote
-                  : verdict === "unknown"
-                    ? "This scan could not determine it — usually because the relevant page could not be fetched."
-                    : agent.breaksNote}
-              </p>
-              {missing.length > 0 ? (
-                <p className="text-xs text-bad">Blocked by: {missing.join(", ")}</p>
-              ) : null}
-              {degraded.length > 0 ? (
-                <p className="text-xs text-warn">Partial: {degraded.join(", ")}</p>
-              ) : null}
-              {met.length > 0 ? <p className="text-xs text-accent">Working: {met.join(", ")}</p> : null}
-            </article>
-          ))}
-        </div>
-      </section>
+              </li>
+            ))}
+          </ol>
+          <p className="text-sm text-muted">
+            The fix for each of these — what to change, where, and the file to paste — is in the{" "}
+            <Link href="/pricing" className="link-underline">
+              monitored report
+            </Link>
+            .
+          </p>
+        </section>
+      ) : (
+        <section className="border-t-2 border-accent pt-4">
+          <h2 className="text-2xl">Every check passes</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
+            {brand.name} is readable, comparable and traversable for the agent classes we test. Keep it that way:
+            monitoring re-checks weekly and tells you the day something regresses.
+          </p>
+        </section>
+      )}
 
       <section className="space-y-4">
-        <div className="space-y-2">
-          <h2 className="border-b border-rule pb-2 text-2xl">Machine interfaces & AI visibility (SEO/GEO)</h2>
-          <p className="max-w-3xl text-sm leading-relaxed text-muted">
-            Classic SEO decides whether people find {brand.name} in a search engine. GEO — generative engine
-            optimisation — decides whether an LLM can read, quote and transact with it. These are the interfaces that
-            decide the second one.
+        <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-rule pb-2">
+          <h2 className="text-2xl">Which agents can use it</h2>
+          <p className="text-xs text-muted">
+            {verdicts.filter((entry) => entry.verdict === "ok").length} of {verdicts.length} classes work
           </p>
         </div>
         <ul className="divide-y divide-border border-t border-border">
-          {interfaces.map((row) => (
-            <li key={row.id} className="flex items-start gap-3 py-3">
-              <StatusIcon verdict={row.verdict} />
-              <div>
-                <p className="text-sm">{row.label}</p>
-                <p className="text-sm leading-relaxed text-muted">{row.description}</p>
+          {verdicts.map(({ agent, verdict, met, missing, degraded }) => (
+            <li key={agent.id} className="py-3">
+              <div className="grid gap-1 sm:grid-cols-[auto_1fr_minmax(0,22rem)] sm:items-baseline sm:gap-4">
+                <StatusIcon verdict={verdict} />
+                <div>
+                  <p className="text-sm">{agent.label}</p>
+                  <p className="text-xs text-muted">{agent.examples}</p>
+                </div>
+                <p className="text-sm leading-relaxed text-muted">
+                  {verdict === "ok"
+                    ? agent.worksNote
+                    : verdict === "unknown"
+                      ? "Not determined in this scan — usually a page we could not fetch."
+                      : agent.breaksNote}
+                </p>
               </div>
+              {missing.length > 0 || degraded.length > 0 ? (
+                <div className="mt-1 sm:pl-9">
+                  <Disclosure summary="What this agent needs">
+                    <ul className="space-y-1 text-xs">
+                      {missing.length > 0 ? <li className="text-bad">Blocked by: {missing.join(", ")}</li> : null}
+                      {degraded.length > 0 ? <li className="text-warn">Partial: {degraded.join(", ")}</li> : null}
+                      {met.length > 0 ? <li className="text-accent">Working: {met.join(", ")}</li> : null}
+                      <li className="text-muted">{agent.description}</li>
+                    </ul>
+                  </Disclosure>
+                </div>
+              ) : null}
             </li>
           ))}
         </ul>
       </section>
 
-      {failing > 0 ? (
-        <section className="border-t-2 border-foreground bg-raised p-6">
-          <h2 className="text-xl">
-            {failing} {failing === 1 ? "gap" : "gaps"} between {brand.name} and the AI answers
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-            Every measurement above is public. Monitoring adds what to do about it: the fix list for these gaps, plus
-            weekly checks of how often ChatGPT and Perplexity name your products — and which shops they name instead.
+      <section className="grid gap-8 sm:grid-cols-[minmax(0,1fr)_minmax(0,18rem)]">
+        <div className="space-y-3">
+          <h2 className="border-b border-rule pb-2 text-2xl">Machine interfaces</h2>
+          <p className="text-sm leading-relaxed text-muted">
+            {exposed.length === 0
+              ? `${brand.name} exposes none of the interfaces agents look for.`
+              : `${brand.name} exposes ${exposed.length} of ${interfaces.length} interfaces agents look for: ${exposed
+                  .map((row) => row.label)
+                  .join(", ")}.`}
           </p>
-          <div className="mt-4">
-            <CheckoutButton domain={brand.domain} />
-          </div>
-        </section>
-      ) : null}
-
-      <section className="grid gap-6 sm:grid-cols-2">
-        <BadgeSnippet slug={slug} score={scan.score ?? 0} />
-        <div className="border-t border-border pt-4">
-          <h2 className="text-xl">Are your products in the answers?</h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted">
-            Import your catalogue and we ask the major models real buying questions about your products, per market,
-            then report how often you are named, how often you are linked, and who outranks you.
-          </p>
-          <p className="mt-3 text-sm">From CHF {MONITOR_PRICE_CHF} per month, weekly.</p>
-          <div className="mt-4">
-            <CheckoutButton domain={brand.domain} />
-          </div>
+          <Disclosure summary="All interfaces, one by one" count={interfaces.length}>
+            <ul className="divide-y divide-border">
+              {interfaces.map((row) => (
+                <VerdictRow key={row.id} verdict={row.verdict} title={row.label} note={row.description} />
+              ))}
+            </ul>
+          </Disclosure>
+          <Disclosure summary="All checks by dimension" count={scan.signals.length}>
+            <div className="space-y-5">
+              {(Object.keys(DIMENSIONS) as DimensionId[]).map((dimensionId) => {
+                const rows = scan.signals.filter((signal) => signal.dimension === dimensionId);
+                if (rows.length === 0) return null;
+                return (
+                  <div key={dimensionId}>
+                    <h3 className="eyebrow border-b border-border pb-2">{DIMENSIONS[dimensionId].label}</h3>
+                    <ul className="divide-y divide-border">
+                      {rows.map((row) => (
+                        <li key={row.id} className="flex items-center gap-3 py-2 text-sm">
+                          <StatusIcon verdict={verdictFromStatus(row.status)} size={18} />
+                          <span>{signalTitles.get(row.signalId) ?? row.signalId}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          </Disclosure>
         </div>
+        <aside className="space-y-4 border-t border-border pt-4 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
+          <h2 className="eyebrow">Score by dimension</h2>
+          <ul className="divide-y divide-border">
+            {dimensions.map((dimension) => (
+              <li key={dimension.id} className="flex items-center gap-3 py-2 text-sm">
+                <StatusIcon verdict={verdictFromShare(dimension.points, dimension.max)} size={18} />
+                <span>{dimension.label}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs leading-relaxed text-muted">
+            Weightings and the signal-by-signal rubric are in{" "}
+            <Link href="/methodology" className="link-underline">
+              the methodology
+            </Link>
+            .
+          </p>
+        </aside>
+      </section>
+
+      <section className="grid gap-8 border-t-2 border-foreground bg-raised p-6 sm:grid-cols-2">
+        <div className="space-y-3">
+          <h2 className="text-xl">Get named in the answers, not just readable</h2>
+          <p className="max-w-xl text-sm leading-relaxed text-muted">
+            Monitoring adds the fix list for every gap above, then asks ChatGPT, Perplexity, Claude and Gemini real
+            buying questions about your products every week — and names the shops recommended instead of you.
+          </p>
+          <p className="text-sm">From CHF {MONITOR_PRICE_CHF} per month.</p>
+          <CheckoutButton domain={brand.domain} />
+        </div>
+        <BadgeSnippet slug={slug} score={scan.score ?? 0} />
       </section>
 
       <p className="text-xs text-muted">

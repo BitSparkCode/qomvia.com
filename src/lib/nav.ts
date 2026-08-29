@@ -34,7 +34,7 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Trust",
     links: [
-      { href: "/methodology", label: "Methodology", description: "The full rubric and how each signal is measured." },
+      { href: "/methodology", label: "Methodology", description: "How scores are measured, and what our crawler will never do." },
       { href: "/bot", label: "About our crawler", description: "What QomviaBot does, and never does." },
       { href: "/opt-out", label: "Opt out", description: "Remove a storefront from the public index." },
     ],

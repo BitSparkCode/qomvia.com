@@ -70,12 +70,14 @@ export default async function ReportPage() {
   return (
     <div className="space-y-12">
       <header className="space-y-3 border-b border-rule pb-6">
-        <p className="eyebrow">The Qomvia index · rubric v1</p>
+        <p className="eyebrow">The Qomvia index</p>
         <h1 className="font-serif text-4xl tracking-tight sm:text-5xl">The state of agent commerce</h1>
         <p className="max-w-2xl leading-relaxed text-muted">
-          Measured across {total} storefronts with rubric v1. Every number here is reproducible: each store has a public
-          page showing the individual measurements behind its score.
+          AI assistants are already recommending shops. We measured {total} of them — most are barely readable.
         </p>
+        <Link href="/" className="link-underline">
+          See where your store lands →
+        </Link>
       </header>
 
       <section className="grid gap-8 sm:grid-cols-3">

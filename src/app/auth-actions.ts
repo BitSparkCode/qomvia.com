@@ -7,6 +7,7 @@ import { loginLink, sendLoginEmail } from "@/lib/email";
 import { prisma } from "@/lib/db";
 import { importFromCsv, importFromShopifyDomain, importFromUrl } from "@/lib/products/import";
 import { RESCAN_COOLDOWN_MS, scanDomain } from "@/lib/scan-service";
+import { addTrackedCompetitor, untrackCompetitor } from "@/lib/visibility/competitors";
 import { runVisibility } from "@/lib/visibility/run";
 
 export type FormState = { error?: string; ok?: string };
@@ -130,6 +131,27 @@ export async function trackProductsAction(_state: FormState, formData: FormData)
         ? "No products selected — runs fall back to the whole catalogue."
         : `Tracking ${selected.length} products.`,
   };
+}
+
+export async function addCompetitorAction(_state: FormState, formData: FormData): Promise<FormState> {
+  const brandId = String(formData.get("brandId") ?? "");
+  const guard = await requirePremium(brandId);
+  if ("error" in guard) return { error: guard.error };
+
+  const result = await addTrackedCompetitor(brandId, String(formData.get("domain") ?? ""));
+  if ("error" in result) return { error: result.error };
+  revalidatePath("/dashboard");
+  return { ok: result.ok };
+}
+
+export async function removeCompetitorAction(_state: FormState, formData: FormData): Promise<FormState> {
+  const brandId = String(formData.get("brandId") ?? "");
+  const guard = await requirePremium(brandId);
+  if ("error" in guard) return { error: guard.error };
+
+  await untrackCompetitor(brandId, String(formData.get("competitorId") ?? ""));
+  revalidatePath("/dashboard");
+  return { ok: "Competitor removed." };
 }
 
 export async function runVisibilityAction(_state: FormState, formData: FormData): Promise<FormState> {

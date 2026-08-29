@@ -9,7 +9,7 @@ export function CheckoutButton({
   label = `Start visibility monitoring — CHF ${MONITOR_PRICE_CHF}/mo`,
 }: {
   domain: string;
-  product?: "monitor" | "agency" | "pack_1000" | "pack_5000";
+  product?: "monitor" | "agency" | "pack_1000" | "pack_5000" | "competitor_slot";
   label?: string;
 }) {
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");

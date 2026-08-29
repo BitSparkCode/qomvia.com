@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 import { provisionAccount } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
+import { cancelCompetitorSlot, grantCompetitorSlot } from "@/lib/visibility/competitors";
 import { addCredits, grantPlanCredits } from "@/lib/visibility/credits";
 import { CREDIT_PACKS } from "@/lib/visibility/plans";
 
@@ -33,6 +34,18 @@ async function recordSubscription(session: Stripe.Checkout.Session) {
   });
 
   await grantPlanCredits(brandId, tier);
+
+  const email = session.customer_details?.email;
+  if (email) await provisionAccount(email, brandId);
+}
+
+async function recordCompetitorSlot(session: Stripe.Checkout.Session) {
+  const brandId = session.metadata?.brandId;
+  if (!brandId) return;
+  await grantCompetitorSlot(brandId, {
+    subscriptionId: typeof session.subscription === "string" ? session.subscription : session.subscription?.id,
+    sessionId: session.id,
+  });
 
   const email = session.customer_details?.email;
   if (email) await provisionAccount(email, brandId);
@@ -73,7 +86,11 @@ export async function POST(request: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     try {
-      if (session.mode === "subscription") await recordSubscription(session);
+      if (session.mode === "subscription" && session.metadata?.product === "competitor_slot") {
+        await recordCompetitorSlot(session);
+      } else if (session.mode === "subscription") {
+        await recordSubscription(session);
+      }
       if (session.mode === "payment") await recordCreditPack(session);
     } catch (error) {
       return NextResponse.json({ error: (error as Error).message }, { status: 500 });
@@ -98,6 +115,7 @@ export async function POST(request: Request) {
       where: { stripeSubscriptionId: subscription.id },
       data: { status: "cancelled" },
     });
+    await cancelCompetitorSlot(subscription.id);
   }
 
   return NextResponse.json({ received: true });

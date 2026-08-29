@@ -3,7 +3,9 @@
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
+  addCompetitorAction,
   importProductsAction,
+  removeCompetitorAction,
   logoutAction,
   rescanAction,
   runVisibilityAction,
@@ -118,6 +120,69 @@ export function Watchlist({
       </div>
       <Feedback state={state} />
     </form>
+  );
+}
+
+export type TrackedCompetitor = {
+  id: string;
+  name: string;
+  domain: string | null;
+  mentions: number;
+  wins: number;
+};
+
+export function CompetitorTracker({
+  brandId,
+  competitors,
+  allowance,
+}: {
+  brandId: string;
+  competitors: TrackedCompetitor[];
+  allowance: number;
+}) {
+  const [addState, addAction] = useActionState<FormState, FormData>(addCompetitorAction, {});
+  const [removeState, removeAction] = useActionState<FormState, FormData>(removeCompetitorAction, {});
+  const full = competitors.length >= allowance;
+
+  return (
+    <div className="space-y-3">
+      {competitors.length > 0 ? (
+        <ul className="divide-y divide-border border border-border">
+          {competitors.map((competitor) => (
+            <li key={competitor.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+              <span className="truncate">{competitor.domain ?? competitor.name}</span>
+              <span className="tabular text-xs text-muted">
+                named in {competitor.mentions} answers · {competitor.wins} without you
+              </span>
+              <form action={removeAction}>
+                <input type="hidden" name="brandId" value={brandId} />
+                <input type="hidden" name="competitorId" value={competitor.id} />
+                <button type="submit" className="text-xs text-muted hover:text-foreground">
+                  Remove
+                </button>
+              </form>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      <form action={addAction} className="flex flex-wrap items-center gap-2">
+        <input type="hidden" name="brandId" value={brandId} />
+        <input
+          name="domain"
+          placeholder="competitor.ch"
+          disabled={full}
+          className="flex-1 border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-accent disabled:opacity-50"
+        />
+        <Submit idle="Watch competitor" busy="Adding…" variant="outline" />
+      </form>
+      <p className="text-xs text-muted">
+        {competitors.length} of {allowance} slots used. Every run reports where each watched domain is recommended
+        instead of you.
+      </p>
+      <Feedback state={addState} />
+      <Feedback state={removeState} />
+    </div>
   );
 }
 
