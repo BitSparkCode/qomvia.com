@@ -1,0 +1,60 @@
+# Launch brand set: DACH + Swiss retail, plus global reference stores.
+# One domain per line. Used by `npm run precrawl`.
+
+# Switzerland
+digitec.ch
+galaxus.ch
+microspot.ch
+brack.ch
+manor.ch
+coop.ch
+migros.ch
+interdiscount.ch
+melectronics.ch
+zalando.ch
+ochsnersport.ch
+transa.ch
+bachmann.ch
+freitag.ch
+onrunning.com
+mammut.com
+victorinox.com
+caran-dache.com
+lindt.ch
+nespresso.com
+
+# Germany
+otto.de
+zalando.de
+mediamarkt.de
+saturn.de
+aboutyou.de
+douglas.de
+thomann.de
+notebooksbilliger.de
+bergfreunde.de
+breuninger.com
+snocks.com
+waterdrop.com
+hellofresh.de
+flaconi.de
+babymarkt.de
+
+# Austria
+xxxlutz.at
+universal.at
+hervis.at
+intersport.at
+niceshops.com
+
+# Global reference points
+allbirds.com
+patagonia.com
+gymshark.com
+nike.com
+apple.com
+ikea.com
+uniqlo.com
+sephora.com
+lego.com
+bose.com
