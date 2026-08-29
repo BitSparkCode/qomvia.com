@@ -45,3 +45,6 @@ export async function POST(request: Request) {
   await submitToIndexNow([...monitored, ...stale].map((brand) => `/site/${brand.slug}`));
   return NextResponse.json({ scanned: results.length, results });
 }
+
+/** Vercel Cron invokes cron paths with GET and the CRON_SECRET bearer header. */
+export const GET = POST;

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { paidAccess } from "@/lib/access";
 import { normalizeDomain } from "@/lib/http";
 import { submitToIndexNow } from "@/lib/indexnow";
 import { latestScan, RESCAN_COOLDOWN_MS, scanDomain, upsertBrand } from "@/lib/scan-service";
@@ -7,7 +8,7 @@ import { absoluteUrl } from "@/lib/site";
 
 export const maxDuration = 120;
 
-const schema = z.object({ domain: z.string().min(3) });
+const schema = z.object({ domain: z.string().min(3), sessionId: z.string().min(10).optional() });
 
 export async function POST(request: Request) {
   const parsed = schema.safeParse(await request.json().catch(() => null));
@@ -24,6 +25,23 @@ export async function POST(request: Request) {
   if (brand.optedOut) return NextResponse.json({ error: "Domain has opted out" }, { status: 403 });
 
   const existing = await latestScan(brand.id);
+
+  // The first score for a domain is free and public; re-checks are a paid feature.
+  if (existing && !(await paidAccess(brand.id, parsed.data.sessionId))) {
+    return NextResponse.json(
+      {
+        domain,
+        score: existing.score,
+        grade: existing.grade,
+        cached: true,
+        page: absoluteUrl(`/site/${brand.slug}`),
+        error: "Re-checks are part of the paid plans. Buy the audit or monitoring to re-scan this domain.",
+        checkout: absoluteUrl(`/site/${brand.slug}/report`),
+      },
+      { status: 402 },
+    );
+  }
+
   if (existing && Date.now() - existing.createdAt.getTime() < RESCAN_COOLDOWN_MS) {
     return NextResponse.json({
       domain,

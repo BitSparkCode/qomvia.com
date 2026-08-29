@@ -23,6 +23,11 @@ model Brand {
   subscription Subscription?
   auditOrders AuditOrder[]
   alerts      Alert[]
+  products    Product[]
+  imports     ProductImport[]
+  prompts     VisibilityPrompt[]
+  visibilityRuns VisibilityRun[]
+  members     BrandMember[]
 
   @@index([country])
   @@index([industry])
@@ -91,6 +96,7 @@ model Subscription {
   tier                 PlanTier @default(MONITOR)
   stripeCustomerId     String?
   stripeSubscriptionId String?  @unique
+  stripeSessionId      String?  @unique
   status               String   @default("incomplete")
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
@@ -111,6 +117,154 @@ model AuditOrder {
   paidAt                DateTime?
 
   @@index([brandId])
+}
+
+/// A product imported from a shop feed. Only public catalogue data is stored.
+model Product {
+  id          String   @id @default(cuid())
+  brand       Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId     String
+  externalId  String
+  title       String
+  description String?
+  category    String?
+  vendor      String?
+  priceCents  Int?
+  currency    String?
+  gtin        String?
+  url         String?
+  imageUrl    String?
+  source      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  prompts     VisibilityPrompt[]
+
+  @@unique([brandId, externalId])
+  @@index([brandId])
+}
+
+model ProductImport {
+  id           String    @id @default(cuid())
+  brand        Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId      String
+  source       String
+  sourceUrl    String?
+  status       String    @default("running")
+  productCount Int       @default(0)
+  error        String?
+  createdAt    DateTime  @default(now())
+  finishedAt   DateTime?
+
+  @@index([brandId, createdAt])
+}
+
+/// A search phrase we ask the models, derived from the imported catalogue.
+model VisibilityPrompt {
+  id        String   @id @default(cuid())
+  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId   String
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productId String?
+  text      String
+  intent    String
+  locale    String   @default("de-CH")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  results   VisibilityResult[]
+
+  @@unique([brandId, text])
+  @@index([brandId, active])
+}
+
+model VisibilityRun {
+  id           String    @id @default(cuid())
+  brand        Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId      String
+  status       String    @default("running")
+  trigger      String    @default("manual")
+  providers    String[]
+  promptsRun   Int       @default(0)
+  score        Int?
+  mentionRate  Float?
+  citationRate Float?
+  avgRank      Float?
+  shareOfVoice Json?
+  costCents    Int       @default(0)
+  error        String?
+  createdAt    DateTime  @default(now())
+  finishedAt   DateTime?
+  results      VisibilityResult[]
+
+  @@index([brandId, createdAt])
+}
+
+model VisibilityResult {
+  id          String           @id @default(cuid())
+  run         VisibilityRun    @relation(fields: [runId], references: [id], onDelete: Cascade)
+  runId       String
+  prompt      VisibilityPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  promptId    String
+  provider    String
+  model       String
+  mentioned   Boolean          @default(false)
+  cited       Boolean          @default(false)
+  rank        Int?
+  competitors String[]
+  citations   String[]
+  answer      String
+  error       String?
+  createdAt   DateTime         @default(now())
+
+  @@index([runId])
+  @@index([promptId, createdAt])
+}
+
+/// A merchant account. Passwordless: identity is proven by an emailed link.
+model User {
+  id          String        @id @default(cuid())
+  email       String        @unique
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  memberships BrandMember[]
+  sessions    AuthSession[]
+}
+
+/// Which shops an account may see and re-scan.
+model BrandMember {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId   String
+  role      String   @default("owner")
+  createdAt DateTime @default(now())
+
+  @@unique([userId, brandId])
+  @@index([brandId])
+}
+
+/// Only the hash of a session token is stored, so a database leak is not a login.
+model AuthSession {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// Single-use magic-link token, hashed and short-lived.
+model LoginToken {
+  id        String    @id @default(cuid())
+  email     String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email, createdAt])
 }
 
 model Alert {

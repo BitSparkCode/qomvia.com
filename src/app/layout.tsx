@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
+import { Logo } from "@/components/logo";
 import { SITE_NAME, SITE_TAGLINE, siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -20,6 +21,7 @@ const NAV = [
   { href: "/methodology", label: "Methodology" },
   { href: "/pricing", label: "Pricing" },
   { href: "/report", label: "State of agent commerce" },
+  { href: "/dashboard", label: "Sign in" },
 ];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -29,9 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="border-b border-border">
           <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-4">
             <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-              <span className="grid h-7 w-7 place-items-center rounded-md bg-accent font-mono text-sm text-black">
-                ✓
-              </span>
+              <Logo size={26} />
               {SITE_NAME}
             </Link>
             <nav className="flex flex-wrap items-center gap-4 text-sm text-muted">

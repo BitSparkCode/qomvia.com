@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { DimensionBars, ScoreDial, StatusPill } from "@/components/score";
+import { DimensionList, ScoreDial, StatusIcon, verdictFromStatus } from "@/components/score";
+import { AGENT_INTERFACES, agentVerdicts, buildSignalLookup } from "@/lib/rubric/agents";
 import { BadgeSnippet } from "@/components/badge-snippet";
 import { DeepAuditButton } from "@/components/deep-audit-button";
 import { prisma } from "@/lib/db";
@@ -48,6 +49,15 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
   if (!data) notFound();
   const { brand, scan, history } = data;
   const dimensions = (scan.dimensions as unknown as DimensionScore[]) ?? [];
+  const failing = scan.signals.filter((signal) => signal.status !== "pass").length;
+
+  const signalTitles = new Map(SIGNALS.map((signal) => [signal.id, signal.title]));
+  const lookup = buildSignalLookup(scan.signals, signalTitles);
+  const verdicts = agentVerdicts(lookup);
+  const interfaces = AGENT_INTERFACES.map((row) => ({
+    ...row,
+    verdict: verdictFromStatus(lookup.get(row.signalId)?.status ?? "unknown"),
+  }));
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -95,8 +105,8 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
 
       <section className="grid gap-8 sm:grid-cols-2">
         <div className="rounded-xl border border-border bg-surface p-5">
-          <h2 className="mb-4 font-semibold">Score by dimension</h2>
-          <DimensionBars dimensions={dimensions} />
+          <h2 className="mb-4 font-semibold">Readiness by dimension</h2>
+          <DimensionList dimensions={dimensions} />
         </div>
         <div className="rounded-xl border border-border bg-surface p-5">
           <h2 className="mb-4 font-semibold">Score history</h2>
@@ -124,28 +134,16 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
           if (rows.length === 0) return null;
           return (
             <div key={dimensionId} className="overflow-hidden rounded-xl border border-border">
-              <div className="flex items-baseline justify-between bg-surface px-4 py-3">
+              <div className="bg-surface px-4 py-3">
                 <h3 className="font-medium">{DIMENSIONS[dimensionId].label}</h3>
-                <span className="font-mono text-xs text-muted">{DIMENSIONS[dimensionId].max} pts</span>
               </div>
               <ul className="divide-y divide-border">
                 {rows.map((row) => {
                   const definition = SIGNALS.find((signal) => signal.id === row.signalId);
                   return (
-                    <li key={row.id} className="space-y-1 px-4 py-3">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <StatusPill status={row.status} />
-                        <span className="font-medium">{definition?.title ?? row.signalId}</span>
-                        <span className="ml-auto font-mono text-xs text-muted">
-                          {row.points}/{row.maxPoints}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted">{row.detail}</p>
-                      {row.status !== "pass" && definition ? (
-                        <p className="text-sm">
-                          <span className="text-accent">Fix:</span> {definition.fix}
-                        </p>
-                      ) : null}
+                    <li key={row.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+                      <StatusIcon verdict={verdictFromStatus(row.status)} />
+                      <span className="font-medium">{definition?.title ?? row.signalId}</span>
                     </li>
                   );
                 })}
@@ -155,13 +153,92 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
         })}
       </section>
 
+      <section className="space-y-6">
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold">Which AI agents can use {brand.name}?</h2>
+          <p className="max-w-3xl text-sm text-muted">
+            Not every agent needs the same things. A research agent only has to read the page; a shopping agent has to
+            reach a payable checkout; an MCP client needs a tool endpoint to call. Below is what {brand.domain} supports
+            per class of agent, measured from public HTTP responses.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {verdicts.map(({ agent, verdict, met, missing, degraded }) => (
+            <article key={agent.id} className="space-y-3 rounded-xl border border-border bg-surface p-5">
+              <div className="flex items-start gap-3">
+                <StatusIcon verdict={verdict} size={24} />
+                <div>
+                  <h3 className="font-medium">{agent.label}</h3>
+                  <p className="text-xs text-muted">{agent.examples}</p>
+                </div>
+              </div>
+              <p className="text-sm text-muted">{agent.description}</p>
+              <p className="text-sm">
+                {verdict === "ok"
+                  ? agent.worksNote
+                  : verdict === "unknown"
+                    ? "This scan could not determine it — usually because the relevant page could not be fetched."
+                    : agent.breaksNote}
+              </p>
+              {missing.length > 0 ? (
+                <p className="text-xs text-bad">Blocked by: {missing.join(", ")}</p>
+              ) : null}
+              {degraded.length > 0 ? (
+                <p className="text-xs text-warn">Partial: {degraded.join(", ")}</p>
+              ) : null}
+              {met.length > 0 ? <p className="text-xs text-accent">Working: {met.join(", ")}</p> : null}
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold">Machine interfaces & AI visibility (SEO/GEO)</h2>
+          <p className="max-w-3xl text-sm text-muted">
+            Classic SEO decides whether people find {brand.name} in a search engine. GEO — generative engine
+            optimisation — decides whether an LLM can read, quote and transact with it. These are the interfaces that
+            decide the second one.
+          </p>
+        </div>
+        <div className="overflow-hidden rounded-xl border border-border">
+          <ul className="divide-y divide-border">
+            {interfaces.map((row) => (
+              <li key={row.id} className="flex items-start gap-3 px-4 py-3">
+                <StatusIcon verdict={row.verdict} />
+                <div>
+                  <p className="font-medium">{row.label}</p>
+                  <p className="text-sm text-muted">{row.description}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {failing > 0 ? (
+        <section className="rounded-xl border border-border bg-surface p-5">
+          <h2 className="font-semibold">
+            {failing} fixable {failing === 1 ? "issue" : "issues"} — fix list is in the paid report
+          </h2>
+          <p className="mt-2 text-sm text-muted">
+            The measurements above are public. The remediation detail is not: which files to publish, the exact markup
+            and headers to change, and the order that fixes the most impactful gaps first. That ships in the
+            report for CHF {DEEP_AUDIT_PRICE_CHF}, together with a deep crawl of up to 500 URLs.
+          </p>
+          <div className="mt-4">
+            <DeepAuditButton domain={brand.domain} label={`Unlock the fix list — CHF ${DEEP_AUDIT_PRICE_CHF}`} />
+          </div>
+        </section>
+      ) : null}
+
       <section className="grid gap-6 sm:grid-cols-2">
         <BadgeSnippet slug={slug} score={scan.score ?? 0} />
         <div className="rounded-xl border border-border bg-surface p-5">
           <h2 className="font-semibold">Want the full picture?</h2>
           <p className="mt-2 text-sm text-muted">
             The deep audit crawls up to 500 URLs, checks every product template, compares you against three competitors
-            and returns a prioritised fix list with platform-specific instructions.
+            and returns the prioritised fix list — which files to add, which markup to change, in what order.
           </p>
           <p className="mt-3 text-sm">CHF {DEEP_AUDIT_PRICE_CHF} one-off, delivered within an hour.</p>
           <div className="mt-4">

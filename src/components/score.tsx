@@ -45,43 +45,55 @@ export function ScoreDial({ score, grade, size = 148 }: { score: number; grade: 
   );
 }
 
-export function DimensionBars({ dimensions }: { dimensions: DimensionScore[] }) {
+/** Verdicts are shown as symbols, never as point arithmetic. */
+export type Verdict = "ok" | "warn" | "missing" | "unknown";
+
+export function verdictFromStatus(status: string): Verdict {
+  if (status === "pass") return "ok";
+  if (status === "partial") return "warn";
+  if (status === "fail") return "missing";
+  return "unknown";
+}
+
+export function verdictFromShare(points: number, max: number): Verdict {
+  if (max === 0) return "unknown";
+  const share = points / max;
+  if (share >= 0.85) return "ok";
+  if (share >= 0.4) return "warn";
+  return "missing";
+}
+
+const VERDICT: Record<Verdict, { glyph: string; className: string; label: string }> = {
+  ok: { glyph: "✓", className: "text-accent border-accent/40 bg-accent/10", label: "ok" },
+  warn: { glyph: "!", className: "text-warn border-warn/40 bg-warn/10", label: "needs attention" },
+  missing: { glyph: "✕", className: "text-bad border-bad/40 bg-bad/10", label: "missing" },
+  unknown: { glyph: "?", className: "text-muted border-border bg-surface", label: "not determined" },
+};
+
+export function StatusIcon({ verdict, size = 22 }: { verdict: Verdict; size?: number }) {
+  const style = VERDICT[verdict];
   return (
-    <ul className="space-y-3">
-      {dimensions.map((dimension) => {
-        const share = dimension.max === 0 ? 0 : (dimension.points / dimension.max) * 100;
-        return (
-          <li key={dimension.id}>
-            <div className="flex items-baseline justify-between text-sm">
-              <span>{dimension.label}</span>
-              <span className="font-mono text-muted">
-                {dimension.points}/{dimension.max}
-              </span>
-            </div>
-            <div className="mt-1 h-2 overflow-hidden rounded-full bg-border">
-              <div
-                className="h-full rounded-full"
-                style={{ width: `${share}%`, background: gradeColor(share) }}
-              />
-            </div>
-          </li>
-        );
-      })}
-    </ul>
+    <span
+      role="img"
+      aria-label={style.label}
+      title={style.label}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full border font-semibold leading-none ${style.className}`}
+      style={{ width: size, height: size, fontSize: size * 0.6 }}
+    >
+      {style.glyph}
+    </span>
   );
 }
 
-const STATUS_STYLE: Record<string, string> = {
-  pass: "text-accent border-accent/40 bg-accent/10",
-  partial: "text-warn border-warn/40 bg-warn/10",
-  fail: "text-bad border-bad/40 bg-bad/10",
-  unknown: "text-muted border-border bg-surface",
-};
-
-export function StatusPill({ status }: { status: string }) {
+export function DimensionList({ dimensions }: { dimensions: DimensionScore[] }) {
   return (
-    <span className={`rounded border px-2 py-0.5 text-[11px] uppercase tracking-wide ${STATUS_STYLE[status] ?? STATUS_STYLE.unknown}`}>
-      {status}
-    </span>
+    <ul className="space-y-3">
+      {dimensions.map((dimension) => (
+        <li key={dimension.id} className="flex items-center gap-3 text-sm">
+          <StatusIcon verdict={verdictFromShare(dimension.points, dimension.max)} />
+          <span>{dimension.label}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
