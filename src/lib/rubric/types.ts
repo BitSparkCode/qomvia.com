@@ -23,11 +23,19 @@ export type SignalOutcome = {
   evidence?: Record<string, unknown>;
 };
 
+/** How much work the fix is, so a report can put the cheap wins first. */
+export type Effort = "minutes" | "hours" | "ticket";
+
 export type Signal = {
   id: string;
   dimension: DimensionId;
   title: string;
+  /** Title in the failing voice, the way Lighthouse phrases a failed audit. */
+  failTitle: string;
+  /** What the merchant loses while this fails, in one sentence and no jargon. */
+  consequence: string;
   max: number;
+  effort: Effort;
   why: string;
   fix: string;
   evaluate: (context: CrawlContext) => SignalOutcome;

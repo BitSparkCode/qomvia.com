@@ -15,7 +15,9 @@ for existing records, not sold), **Planned** (not implemented — never in site 
 | --- | --- | --- |
 | Domain scan | Live | Enter a domain, get a 0–100 score and A–F grade from ~20 read-only HTTP requests. First scan per domain is free and public; re-scans are paid. |
 | Rubric v1 | Live | 21 signals in 6 dimensions: machine access (25), product-data legibility (25), agent-commerce protocols (20), checkout traversability (15), agent-facing performance (10), policy clarity (5). |
-| Public result page | Live | `/site/<slug>`: score, grade, dimension list, and every signal as ✓ / ! / ✕ / ? — no point values, no fix instructions, no evidence. |
+| Public result page | Live | `/site/<slug>`: a verdict sentence, blocker/weak-spot/passed counts, the five findings that cost the shop most (title and consequence only), agent compatibility, and every signal as ✓ / ! / ✕ / ? behind disclosure — no point values, no fix instructions, no evidence. |
+| Severity model | Live | Findings are ranked blocker / improvement / polish: a failed signal required by an agent class, or a heavy loss, is a blocker. Each carries an effort estimate (minutes / hours / dev ticket). |
+| Product page | Live | `/visibility`: how LLM product visibility works, what a run measures, the index weighting and what a tracked competitor reports. |
 | Agent-compatibility breakdown | Live | Per agent class (crawler/RAG, shopping & checkout agents, MCP tool-callers, API/feed integrators, price bots): can it use this shop, and what breaks. |
 | Machine-interface detail | Live | Presence and quality of MCP endpoint, ACP/agentic checkout, product API, product feed, JSON-LD, `llms.txt`, robots/UA allowances. |
 | Embeddable badge | Live | `/badge/<slug>.svg` with the Qomvia mark, linking back to the result page. |
@@ -36,7 +38,7 @@ for existing records, not sold), **Planned** (not implemented — never in site 
 | Store attachment | Live | A store is attached to the email that paid for it; membership governs all premium actions. |
 | Dashboard | Live | `/dashboard` (noindex): readiness status, failing signals, catalogue, visibility, competitors, credits. |
 | On-demand re-scan | Live | Re-scan a store from the dashboard. Paid plans only. |
-| Paid fix report | Live | `/site/<slug>/report` (noindex): remediation steps and evidence per failing signal, unlocked for paying members. |
+| Paid fix report | Live | `/site/<slug>/report` (noindex): a grade target ("fix the first N and you reach grade B"), findings in blocker / improvement / polish tiers, severity and effort per finding, copy-pasteable snippets filled with the shop's own domain, evidence as a readable table behind disclosure, and anything that regressed since the previous scan flagged as new. |
 
 ## 3. Catalogue import
 
