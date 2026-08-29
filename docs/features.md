@@ -71,6 +71,8 @@ for existing records, not sold), **Planned** (not implemented — never in site 
 | Answer cache | Live | Answers are keyed by phrase + model + locale and reused for 7 days, so phrases shared across shops are paid for once. |
 | Scheduled refresh | Live, needs key | `/api/cron/rescan` refreshes by tier: weekly on Monitor, daily on Agency. Requires the cron to be enabled in Vercel. |
 | Change alerts | Live | Email when a readiness score changes between scans. |
+| Per-product answer overview | Live | The headline deliverable: for every tracked product, one row per model and market with shown/not shown, the position it was listed at, whether it was linked or only named, the competitor recommended instead, the sentence of the answer the verdict was read from, and the change that would win the answer back. Least visible products first. |
+| Public sample | Live | `/visibility` renders the same component against an anonymised run, so a visitor sees the real deliverable before paying. |
 
 ## 5. Commercial model
 
@@ -86,7 +88,15 @@ for existing records, not sold), **Planned** (not implemented — never in site 
 | Done-for-you enablement | Planned | Feed hosting, structured-data fixes, `llms.txt` and an agentic-checkout endpoint settled through the merchant's own Stripe. Sold manually, not self-serve. |
 | Deep audit | Legacy | Withdrawn. `AuditOrder` and the audit entitlement path remain so past purchases keep access; not sold and not mentioned on the site. |
 
-## 6. Launch assets
+## 6. Admin
+
+| Feature | Status | Description |
+| --- | --- | --- |
+| Staff view | Live | `/admin` lists every account with its attached stores, plan, credit balance, product count and whether the plan came from Stripe or was set by hand. 404s for everyone not on the `ADMIN_EMAILS` env allowlist, so there is no signup path to it. |
+| Plan override | Live | Sets a store to Monitor, Agency or no plan without Stripe, writing the same `Subscription` row the webhook writes and granting the plan's monthly credits. Activating also grants membership and marks the link owned-and-verified, so the premium actions actually unlock. |
+| Credit top-up | Live | Adds credits to a store, recorded in the ledger with the granting admin's email as the reason. |
+
+## 7. Launch assets
 
 | Feature | Status | Description |
 | --- | --- | --- |
