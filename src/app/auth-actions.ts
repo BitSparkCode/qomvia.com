@@ -43,7 +43,10 @@ export async function attachStoreAction(_state: FormState, formData: FormData): 
   const result = await attachStore(user.id, String(formData.get("domain") ?? ""), kind);
   if ("error" in result) return { error: result.error };
 
-  await runNextImportJob();
+  // Vercel's Hobby plan allows one cron a day, so the queue is also drained here.
+  for (let index = 0; index < 3; index += 1) {
+    if (!(await runNextImportJob())) break;
+  }
   revalidatePath("/dashboard");
   return { ok: result.ok };
 }
