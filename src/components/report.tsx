@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { StatusIcon, type Verdict } from "@/components/score";
 import type { Effort } from "@/lib/rubric/types";
@@ -71,6 +72,43 @@ export function Disclosure({
       </summary>
       <div className="pb-5">{children}</div>
     </details>
+  );
+}
+
+/**
+ * Stands in for a section only signed-in merchants may read. The blurred rows
+ * are placeholders, so the withheld detail is absent from the response rather
+ * than merely hidden by CSS.
+ */
+export function LockedPanel({
+  title,
+  promise,
+  rows,
+}: {
+  title: string;
+  promise: string;
+  rows: number;
+}) {
+  const widths = ["82%", "64%", "91%", "57%", "74%", "88%"];
+  return (
+    <section className="relative overflow-hidden border-t border-border">
+      <ul aria-hidden className="select-none divide-y divide-border blur-[5px]" style={{ opacity: 0.5 }}>
+        {Array.from({ length: rows }, (_, index) => (
+          <li key={index} className="flex items-center gap-3 py-3">
+            <span className="h-4 w-4 shrink-0 rounded-full bg-rule" />
+            <span className="h-3 bg-rule" style={{ width: widths[index % widths.length] }} />
+          </li>
+        ))}
+      </ul>
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/70 px-6 text-center">
+        <p className="eyebrow">Members only</p>
+        <p className="font-serif text-lg leading-snug">{title}</p>
+        <p className="max-w-md text-sm leading-relaxed text-muted">{promise}</p>
+        <Link href="/login" className="btn mt-1 text-sm">
+          Create a free account
+        </Link>
+      </div>
+    </section>
   );
 }
 

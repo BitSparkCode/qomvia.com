@@ -50,3 +50,15 @@ describe("seal markup", () => {
     expect(sealSvg(tier, 'x"><script>', "2026-08-29")).not.toContain("<script>");
   });
 });
+
+describe("badge.js loader", () => {
+  it("injects the seal without creating a link", async () => {
+    const { GET } = await import("@/app/badge.js/route");
+    const source = await GET().text();
+
+    expect(source).toContain('createElement("span")');
+    expect(source).not.toContain('createElement("a")');
+    expect(source).not.toContain(".href=");
+    expect(source).not.toContain(".target=");
+  });
+});

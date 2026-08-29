@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ScoreDial, StatusIcon, verdictFromStatus, verdictFromShare } from "@/components/score";
-import { CountStrip, Disclosure, VerdictRow } from "@/components/report";
+import { CountStrip, LockedPanel } from "@/components/report";
 import { AGENT_INTERFACES, agentVerdicts, buildSignalLookup } from "@/lib/rubric/agents";
 import { BadgeSnippet } from "@/components/badge-snippet";
 import { CheckoutButton } from "@/components/checkout-button";
 import { prisma } from "@/lib/db";
 import { countFindings, findings, verdictSentence } from "@/lib/rubric/findings";
 import { SIGNALS } from "@/lib/rubric/signals";
-import { DIMENSIONS, type DimensionId, type DimensionScore } from "@/lib/rubric/types";
+import { type DimensionScore } from "@/lib/rubric/types";
 import { absoluteUrl, MONITOR_PRICE_CHF, SITE_NAME } from "@/lib/site";
 
 export const revalidate = 3600;
@@ -131,9 +131,9 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
             ))}
           </ol>
           <p className="text-sm text-muted">
-            The fix for each of these — what to change, where, and the file to paste — is in the{" "}
-            <Link href="/pricing" className="link-underline">
-              monitored report
+            What to change, where, and the file to paste is behind a{" "}
+            <Link href="/login" className="link-underline">
+              free account
             </Link>
             .
           </p>
@@ -156,7 +156,7 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
           </p>
         </div>
         <ul className="divide-y divide-border border-t border-border">
-          {verdicts.map(({ agent, verdict, met, missing, degraded }) => (
+          {verdicts.map(({ agent, verdict }) => (
             <li key={agent.id} className="py-3">
               <div className="grid gap-1 sm:grid-cols-[auto_1fr_minmax(0,22rem)] sm:items-baseline sm:gap-4">
                 <StatusIcon verdict={verdict} />
@@ -172,18 +172,6 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
                       : agent.breaksNote}
                 </p>
               </div>
-              {missing.length > 0 || degraded.length > 0 ? (
-                <div className="mt-1 sm:pl-9">
-                  <Disclosure summary="What this agent needs">
-                    <ul className="space-y-1 text-xs">
-                      {missing.length > 0 ? <li className="text-bad">Blocked by: {missing.join(", ")}</li> : null}
-                      {degraded.length > 0 ? <li className="text-warn">Partial: {degraded.join(", ")}</li> : null}
-                      {met.length > 0 ? <li className="text-accent">Working: {met.join(", ")}</li> : null}
-                      <li className="text-muted">{agent.description}</li>
-                    </ul>
-                  </Disclosure>
-                </div>
-              ) : null}
             </li>
           ))}
         </ul>
@@ -199,34 +187,11 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
                   .map((row) => row.label)
                   .join(", ")}.`}
           </p>
-          <Disclosure summary="All interfaces, one by one" count={interfaces.length}>
-            <ul className="divide-y divide-border">
-              {interfaces.map((row) => (
-                <VerdictRow key={row.id} verdict={row.verdict} title={row.label} note={row.description} />
-              ))}
-            </ul>
-          </Disclosure>
-          <Disclosure summary="All checks by dimension" count={scan.signals.length}>
-            <div className="space-y-5">
-              {(Object.keys(DIMENSIONS) as DimensionId[]).map((dimensionId) => {
-                const rows = scan.signals.filter((signal) => signal.dimension === dimensionId);
-                if (rows.length === 0) return null;
-                return (
-                  <div key={dimensionId}>
-                    <h3 className="eyebrow border-b border-border pb-2">{DIMENSIONS[dimensionId].label}</h3>
-                    <ul className="divide-y divide-border">
-                      {rows.map((row) => (
-                        <li key={row.id} className="flex items-center gap-3 py-2 text-sm">
-                          <StatusIcon verdict={verdictFromStatus(row.status)} size={18} />
-                          <span>{signalTitles.get(row.signalId) ?? row.signalId}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                );
-              })}
-            </div>
-          </Disclosure>
+          <LockedPanel
+            title={`All ${interfaces.length} interfaces and ${scan.signals.length} checks for ${brand.domain}`}
+            promise="Sign in to see which interface is missing, what each check looked for and what to change to pass it. Free, no card."
+            rows={6}
+          />
         </div>
         <aside className="space-y-4 border-t border-border pt-4 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
           <h2 className="eyebrow">Score by dimension</h2>
