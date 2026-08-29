@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
+import { provisionAccount } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { scanDomain } from "@/lib/scan-service";
 import { stripe } from "@/lib/stripe";
@@ -28,6 +29,9 @@ async function fulfilDeepAudit(session: Stripe.Checkout.Session) {
         typeof session.payment_intent === "string" ? session.payment_intent : session.payment_intent?.id,
     },
   });
+
+  const email = session.customer_details?.email;
+  if (email) await provisionAccount(email, brandId);
 
   const deep = await scanDomain(domain, "DEEP");
   await prisma.auditOrder.update({
@@ -59,6 +63,9 @@ async function recordSubscription(session: Stripe.Checkout.Session) {
       stripeSessionId: session.id,
     },
   });
+
+  const email = session.customer_details?.email;
+  if (email) await provisionAccount(email, brandId);
 }
 
 export async function POST(request: Request) {

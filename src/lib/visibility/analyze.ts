@@ -114,6 +114,7 @@ export type RunAggregate = {
   mentionRate: number;
   citationRate: number;
   avgRank: number | null;
+  /** `share` is a 0-1 fraction of answers the competitor appeared in. */
   shareOfVoice: { host: string; answers: number; share: number }[];
 };
 
@@ -144,7 +145,7 @@ export function aggregateRun(
   const shareOfVoice = [...counts.entries()]
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
     .slice(0, 15)
-    .map(([host, answers]) => ({ host, answers, share: Math.round((answers / results.length) * 1000) / 10 }));
+    .map(([host, answers]) => ({ host, answers, share: answers / results.length }));
 
   return { score, mentionRate, citationRate, avgRank, shareOfVoice };
 }

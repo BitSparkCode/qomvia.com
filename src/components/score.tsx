@@ -85,11 +85,6 @@ export function StatusIcon({ verdict, size = 22 }: { verdict: Verdict; size?: nu
   );
 }
 
-export function StatusPill({ status }: { status: string }) {
-  const verdict = verdictFromStatus(status);
-  return <StatusIcon verdict={verdict} />;
-}
-
 export function DimensionList({ dimensions }: { dimensions: DimensionScore[] }) {
   return (
     <ul className="space-y-3">

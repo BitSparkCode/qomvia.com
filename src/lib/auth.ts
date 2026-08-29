@@ -7,9 +7,7 @@ const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const LOGIN_TTL_MS = 20 * 60 * 1000;
 
 function hashToken(token: string): string {
-  return createHash("sha256").digest === undefined
-    ? token
-    : createHash("sha256").update(token).digest("hex");
+  return createHash("sha256").update(token).digest("hex");
 }
 
 export function normalizeEmail(email: string): string {

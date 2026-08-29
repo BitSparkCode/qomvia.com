@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { DimensionBars, ScoreDial } from "@/components/score";
+import { DimensionList, ScoreDial } from "@/components/score";
 import { prisma } from "@/lib/db";
 import type { DimensionScore } from "@/lib/rubric/types";
 import { absoluteUrl } from "@/lib/site";
@@ -75,7 +75,7 @@ export default async function ComparePage({ params }: { params: Promise<{ pair: 
                 <p className="text-xs text-muted">{entry.brand.domain}</p>
               </div>
             </div>
-            <DimensionBars dimensions={(entry.scan.dimensions as unknown as DimensionScore[]) ?? []} />
+            <DimensionList dimensions={(entry.scan.dimensions as unknown as DimensionScore[]) ?? []} />
           </div>
         ))}
       </div>

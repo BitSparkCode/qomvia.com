@@ -22,15 +22,29 @@ function text(value: unknown): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-/** "CHF 129.90", "129,90 CHF", "129.90" → 12990. */
+/**
+ * "CHF 129.90", "129,90 CHF", "1'289.90", "1.289,90" → cents. Thousand
+ * separators differ per platform and locale, so the last separator followed by
+ * one or two digits decides where the decimals start.
+ */
 export function parsePriceCents(value: unknown): number | undefined {
   const raw = text(value);
   if (!raw) return undefined;
-  const match = raw.replace(/\s/g, "").match(/-?\d+(?:[.,]\d{1,2})?/);
+  const match = raw.replace(/\s/g, "").match(/-?[\d'.,]*\d/);
   if (!match) return undefined;
-  const amount = Number(match[0].replace(",", "."));
-  if (!Number.isFinite(amount)) return undefined;
-  return Math.round(amount * 100);
+
+  const negative = match[0].startsWith("-");
+  const digitsAndSeparators = match[0].replace(/^-/, "");
+  const decimal = digitsAndSeparators.match(/[.,](\d{1,2})$/);
+  const whole = (decimal ? digitsAndSeparators.slice(0, -decimal[0].length) : digitsAndSeparators).replace(
+    /[^\d]/g,
+    "",
+  );
+  if (whole.length === 0) return undefined;
+
+  const cents = Number(whole) * 100 + (decimal ? Number(decimal[1].padEnd(2, "0")) : 0);
+  if (!Number.isFinite(cents)) return undefined;
+  return negative ? -cents : cents;
 }
 
 export function parseCurrency(value: unknown): string | undefined {

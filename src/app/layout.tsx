@@ -21,6 +21,7 @@ const NAV = [
   { href: "/methodology", label: "Methodology" },
   { href: "/pricing", label: "Pricing" },
   { href: "/report", label: "State of agent commerce" },
+  { href: "/dashboard", label: "Sign in" },
 ];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
