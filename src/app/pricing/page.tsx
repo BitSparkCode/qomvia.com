@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { PricingActions } from "@/components/pricing-actions";
 import { absoluteUrl, AGENCY_PRICE_CHF, MONITOR_PRICE_CHF } from "@/lib/site";
-import { CREDIT_PACKS, VISIBILITY_PLANS } from "@/lib/visibility/plans";
+import { COMPETITOR_PRICE_CHF, CREDIT_PACKS, VISIBILITY_PLANS } from "@/lib/visibility/plans";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -31,7 +31,7 @@ const TIERS = [
     features: [
       `${VISIBILITY_PLANS.MONITOR.promptBudget} buying questions per run, ChatGPT + Perplexity`,
       "Per-product tracking, you choose which products",
-      "Competitors: who is named instead of you",
+      `${VISIBILITY_PLANS.MONITOR.includedCompetitors} tracked competitor: where it is recommended instead of you`,
       "Recommendations tied to what we measured",
       "Weekly re-scan, alert when a deploy breaks agent access",
       `${VISIBILITY_PLANS.MONITOR.monthlyCredits} credits per month included`,
@@ -47,6 +47,7 @@ const TIERS = [
       `${VISIBILITY_PLANS.AGENCY.locales} market locales per shop`,
       "Daily refresh",
       "White-label reports and API access",
+      `${VISIBILITY_PLANS.AGENCY.includedCompetitors} tracked competitors per shop`,
       `${VISIBILITY_PLANS.AGENCY.monthlyCredits} credits per month included`,
     ],
   },
@@ -93,6 +94,14 @@ export default function PricingPage() {
           catalogues top up in packs of {CREDIT_PACKS.map((pack) => pack.credits.toLocaleString("en-CH")).join(" or ")}{" "}
           ({CREDIT_PACKS.map((pack) => `CHF ${pack.priceChf}`).join(" / ")}). A run never starts if your balance cannot
           cover it, so a scan can never surprise you with a bill.
+        </p>
+      </section>
+
+      <section className="space-y-3 border-t border-border pt-6">
+        <h2 className="text-xl">Tracked competitors</h2>
+        <p className="max-w-3xl text-sm leading-relaxed text-muted">
+          Name the shops you actually lose to and every run tells you where they are recommended and you are not. Extra
+          slots beyond your plan cost CHF {COMPETITOR_PRICE_CHF} per domain and month.
         </p>
       </section>
 

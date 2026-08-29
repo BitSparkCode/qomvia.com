@@ -38,6 +38,23 @@ describe("analyzeAnswer", () => {
     expect(analysis.competitors).toContain("digitec.ch");
   });
 
+  it("finds a watched competitor named without its domain", () => {
+    const analysis = analyzeAnswer(
+      "Bächli Bergsport and Ochsner Sport both carry it.",
+      [],
+      brand,
+      [{ name: "ochsner-sport.ch", domain: "ochsner-sport.ch" }],
+    );
+    expect(analysis.competitors).toContain("ochsner-sport.ch");
+  });
+
+  it("keeps a watched marketplace that is otherwise treated as noise", () => {
+    const analysis = analyzeAnswer("Cheapest on amazon.de right now.", [], brand, [
+      { name: "amazon.de", domain: "amazon.de" },
+    ]);
+    expect(analysis.competitors).toContain("amazon.de");
+  });
+
   it("does not count the brand as its own competitor", () => {
     const analysis = analyzeAnswer("transa.ch has it in stock.", ["https://transa.ch/p"], brand);
     expect(analysis.competitors).not.toContain("transa.ch");

@@ -21,13 +21,7 @@ async function loadBrand(slug: string) {
     include: { signals: true },
   });
   if (!scan) return null;
-  const history = await prisma.scan.findMany({
-    where: { brandId: brand.id, status: "COMPLETE", isPublic: true },
-    orderBy: { createdAt: "desc" },
-    take: 6,
-    select: { score: true, grade: true, createdAt: true },
-  });
-  return { brand, scan, history };
+  return { brand, scan };
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -47,7 +41,7 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const data = await loadBrand(slug);
   if (!data) notFound();
-  const { brand, scan, history } = data;
+  const { brand, scan } = data;
   const dimensions = (scan.dimensions as unknown as DimensionScore[]) ?? [];
   const failing = scan.signals.filter((signal) => signal.status !== "pass").length;
 
@@ -91,9 +85,8 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
               <a href={`https://${brand.domain}`} rel="nofollow noopener" className="link-underline">
                 {brand.domain}
               </a>
-              {brand.platform ? ` · ${brand.platform}` : ""} · scanned{" "}
-              <span className="tabular">{new Date(scan.createdAt).toISOString().slice(0, 10)}</span> ·{" "}
-              {scan.urlsFetched} read-only requests
+              {brand.platform ? ` · ${brand.platform}` : ""} · last scanned{" "}
+              <span className="tabular">{new Date(scan.createdAt).toISOString().slice(0, 10)}</span>
             </p>
             <div className="flex flex-wrap items-center gap-4 text-sm">
               <CheckoutButton domain={brand.domain} />
@@ -106,29 +99,10 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
         </div>
       </section>
 
-      <section className="grid gap-10 sm:grid-cols-2">
-        <div>
-          <h2 className="eyebrow border-b border-border pb-2">Readiness by dimension</h2>
-          <div className="mt-3">
-            <DimensionList dimensions={dimensions} />
-          </div>
-        </div>
-        <div>
-          <h2 className="eyebrow border-b border-border pb-2">Score history</h2>
-          {history.length <= 1 ? (
-            <p className="mt-3 text-sm text-muted">First scan. Re-scan in a month to see whether anything moved.</p>
-          ) : (
-            <ul className="mt-3 divide-y divide-border text-sm">
-              {history.map((entry) => (
-                <li key={entry.createdAt.toISOString()} className="flex justify-between py-2.5 first:pt-0">
-                  <span className="tabular text-muted">{entry.createdAt.toISOString().slice(0, 10)}</span>
-                  <span className="tabular">
-                    {entry.score} ({entry.grade})
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+      <section>
+        <h2 className="eyebrow border-b border-border pb-2">Readiness by dimension</h2>
+        <div className="mt-3">
+          <DimensionList dimensions={dimensions} />
         </div>
       </section>
 

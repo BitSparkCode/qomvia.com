@@ -61,6 +61,7 @@ for existing records, not sold), **Planned** (not implemented — never in site 
 | Visibility index | Live | 0–100 from mention rate (60%), citation rate (20%) and position quality (20%), plus average rank. |
 | Competitor index | Live | Every retailer named in an answer is aggregated per shop with mention count, "wins" (named while the shop was absent) and last-seen date. |
 | Share of voice | Live | Top 15 competitors by share of answers they appear in. |
+| Tracked competitors | Live | A shop adds competitor domains in the dashboard. Every run then reports that domain by name as well as by link, so it is counted even in answers that never cite it: answers naming it, share of answers, and the phrases where it is recommended while the shop is absent. |
 | Recommendations | Live | Derived from measured evidence: failing readiness signals, phrases lost to named competitors, brand-vs-category gap, mentioned-but-not-linked, position, silent tracked products, weakest locale. |
 | Run history | Live | Every completed run keeps index, mention rate, citation rate, average rank, locales, products covered, credits and provider cost. |
 | Answer cache | Live | Answers are keyed by phrase + model + locale and reused for 7 days, so phrases shared across shops are paid for once. |
@@ -74,6 +75,7 @@ for existing records, not sold), **Planned** (not implemented — never in site 
 | Public score | Live | Free, no signup. |
 | Monitoring — CHF 29/month | Live, needs key | One domain, weekly readiness re-scan and visibility run, 300 phrases per run, ChatGPT + Perplexity, 1 locale, 600 credits/month. Needs Stripe keys. |
 | Agency — CHF 149/month | Live, needs key | 25 domains, daily refresh, 1,000 phrases per run, all four providers, 3 locales, 4,000 credits/month, white-label reports. |
+| Competitor slots — CHF 19/month | Live, needs key | One tracked competitor domain per slot; 1 included on Monitor, 5 on Agency, more bought as separate subscriptions from the dashboard. A tracked competitor re-reads answers already paid for, so the marginal provider cost is single-digit rappen a month — 10–100× coverage. |
 | Credits | Live | 1 credit = one phrase asked to one model in one locale. CHF 0.05 each; packs of 1,000 (CHF 49) and 5,000 (CHF 199), bought from the dashboard. Append-only ledger; credits are reserved in a serializable transaction before any provider call and refunded when a run fails. |
 | Credit grants | Live, needs key | Plan allowance is granted on checkout and on every paid Stripe invoice, at most once per 30 days. |
 | Cost accounting | Live | Every run stores its real provider cost in cents next to the credits it consumed, so margin per shop is auditable. |

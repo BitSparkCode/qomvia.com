@@ -8,6 +8,13 @@ import { PROVIDER_CONFIG, type ProviderId } from "@/lib/visibility/providers";
  */
 export const CREDIT_PRICE_CHF = 0.05;
 
+/**
+ * A watched competitor re-reads answers we already paid for, so the only marginal
+ * cost is the handful of comparison phrases naming it: single-digit rappen a month
+ * against CHF 19, which is the wide end of the 10-100x target.
+ */
+export const COMPETITOR_PRICE_CHF = 19;
+
 export const CREDIT_PACKS = [
   { credits: 1000, priceChf: 49 },
   { credits: 5000, priceChf: 199 },
@@ -24,6 +31,8 @@ export type VisibilityPlan = {
   locales: number;
   /** Credits granted every 30 days while the subscription is active. */
   monthlyCredits: number;
+  /** Competitor domains the plan may watch before extra slots are bought. */
+  includedCompetitors: number;
 };
 
 export const VISIBILITY_PLANS: Record<PlanTier, VisibilityPlan> = {
@@ -33,6 +42,7 @@ export const VISIBILITY_PLANS: Record<PlanTier, VisibilityPlan> = {
     refreshDays: 7,
     locales: 1,
     monthlyCredits: 600,
+    includedCompetitors: 1,
   },
   AGENCY: {
     promptBudget: 1000,
@@ -40,6 +50,7 @@ export const VISIBILITY_PLANS: Record<PlanTier, VisibilityPlan> = {
     refreshDays: 1,
     locales: 3,
     monthlyCredits: 4000,
+    includedCompetitors: 5,
   },
 };
 
@@ -50,6 +61,7 @@ export const SAMPLE_PLAN: VisibilityPlan = {
   refreshDays: Number.POSITIVE_INFINITY,
   locales: 1,
   monthlyCredits: 0,
+  includedCompetitors: 0,
 };
 
 /** Credits a run of this size consumes: one per phrase per provider. */

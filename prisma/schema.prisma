@@ -8,28 +8,29 @@ datasource db {
 }
 
 model Brand {
-  id          String   @id @default(cuid())
-  domain      String   @unique
-  name        String
-  slug        String   @unique
-  country     String?
-  industry    String?
-  platform    String?
-  featured    Boolean  @default(false)
-  optedOut    Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  scans       Scan[]
-  subscription Subscription?
-  auditOrders AuditOrder[]
-  alerts      Alert[]
-  products    Product[]
-  imports     ProductImport[]
-  prompts     VisibilityPrompt[]
-  visibilityRuns VisibilityRun[]
-  members     BrandMember[]
-  credits     CreditEntry[]
-  competitors Competitor[]
+  id              String             @id @default(cuid())
+  domain          String             @unique
+  name            String
+  slug            String             @unique
+  country         String?
+  industry        String?
+  platform        String?
+  featured        Boolean            @default(false)
+  optedOut        Boolean            @default(false)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  scans           Scan[]
+  subscription    Subscription?
+  auditOrders     AuditOrder[]
+  alerts          Alert[]
+  products        Product[]
+  imports         ProductImport[]
+  prompts         VisibilityPrompt[]
+  visibilityRuns  VisibilityRun[]
+  members         BrandMember[]
+  credits         CreditEntry[]
+  competitors     Competitor[]
+  competitorSlots CompetitorSlot[]
 
   @@index([country])
   @@index([industry])
@@ -48,20 +49,20 @@ enum ScanStatus {
 }
 
 model Scan {
-  id            String       @id @default(cuid())
-  brand         Brand        @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  id            String         @id @default(cuid())
+  brand         Brand          @relation(fields: [brandId], references: [id], onDelete: Cascade)
   brandId       String
-  mode          ScanMode     @default(SHALLOW)
-  status        ScanStatus   @default(QUEUED)
+  mode          ScanMode       @default(SHALLOW)
+  status        ScanStatus     @default(QUEUED)
   score         Int?
   grade         String?
   dimensions    Json?
-  urlsFetched   Int          @default(0)
+  urlsFetched   Int            @default(0)
   durationMs    Int?
   error         String?
-  rubricVersion String       @default("1.0.0")
-  isPublic      Boolean      @default(true)
-  createdAt     DateTime     @default(now())
+  rubricVersion String         @default("1.0.0")
+  isPublic      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
   finishedAt    DateTime?
   signals       SignalResult[]
 
@@ -70,8 +71,8 @@ model Scan {
 }
 
 model SignalResult {
-  id        String  @id @default(cuid())
-  scan      Scan    @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  id        String @id @default(cuid())
+  scan      Scan   @relation(fields: [scanId], references: [id], onDelete: Cascade)
   scanId    String
   signalId  String
   dimension String
@@ -81,8 +82,8 @@ model SignalResult {
   detail    String
   evidence  Json?
 
-  @@index([scanId])
   @@unique([scanId, signalId])
+  @@index([scanId])
 }
 
 enum PlanTier {
@@ -123,8 +124,8 @@ model AuditOrder {
 
 /// A product imported from a shop feed. Only public catalogue data is stored.
 model Product {
-  id          String   @id @default(cuid())
-  brand       Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  id          String             @id @default(cuid())
+  brand       Brand              @relation(fields: [brandId], references: [id], onDelete: Cascade)
   brandId     String
   externalId  String
   title       String
@@ -138,9 +139,9 @@ model Product {
   imageUrl    String?
   source      String
   /// Only tracked products consume credits in a visibility run.
-  tracked     Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  tracked     Boolean            @default(false)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
   prompts     VisibilityPrompt[]
 
   @@unique([brandId, externalId])
@@ -165,18 +166,18 @@ model ProductImport {
 
 /// A search phrase we ask the models, derived from the imported catalogue.
 model VisibilityPrompt {
-  id        String   @id @default(cuid())
-  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  id        String             @id @default(cuid())
+  brand     Brand              @relation(fields: [brandId], references: [id], onDelete: Cascade)
   brandId   String
-  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  product   Product?           @relation(fields: [productId], references: [id], onDelete: SetNull)
   productId String?
   text      String
   intent    String
-  locale    String   @default("de-CH")
-  active    Boolean  @default(true)
+  locale    String             @default("de-CH")
+  active    Boolean            @default(true)
   /// Drives run rotation, so successive runs cover the whole catalogue.
   lastRunAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime           @default(now())
   results   VisibilityResult[]
 
   @@unique([brandId, locale, text])
@@ -184,27 +185,27 @@ model VisibilityPrompt {
 }
 
 model VisibilityRun {
-  id           String    @id @default(cuid())
-  brand        Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
-  brandId      String
-  status       String    @default("running")
-  trigger      String    @default("manual")
-  providers    String[]
-  promptsRun   Int       @default(0)
-  score        Int?
-  mentionRate  Float?
-  citationRate Float?
-  avgRank      Float?
-  shareOfVoice Json?
+  id              String             @id @default(cuid())
+  brand           Brand              @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId         String
+  status          String             @default("running")
+  trigger         String             @default("manual")
+  providers       String[]
+  promptsRun      Int                @default(0)
+  score           Int?
+  mentionRate     Float?
+  citationRate    Float?
+  avgRank         Float?
+  shareOfVoice    Json?
   recommendations Json?
-  locales      String[]
-  productsCovered Int    @default(0)
-  creditsUsed  Int       @default(0)
-  costCents    Int       @default(0)
-  error        String?
-  createdAt    DateTime  @default(now())
-  finishedAt   DateTime?
-  results      VisibilityResult[]
+  locales         String[]
+  productsCovered Int                @default(0)
+  creditsUsed     Int                @default(0)
+  costCents       Int                @default(0)
+  error           String?
+  createdAt       DateTime           @default(now())
+  finishedAt      DateTime?
+  results         VisibilityResult[]
 
   @@index([brandId, createdAt])
 }
@@ -287,6 +288,8 @@ model Competitor {
   brandId     String
   name        String
   domain      String?
+  /// Added by the shop to be watched every run, rather than discovered in an answer.
+  tracked     Boolean  @default(false)
   /// Answers this retailer was named in.
   mentions    Int      @default(0)
   /// Answers where it was named and the customer was not.
@@ -297,6 +300,20 @@ model Competitor {
 
   @@unique([brandId, name])
   @@index([brandId, mentions])
+}
+
+/// One paid competitor-monitoring slot. Slots are counted, not stored on the brand,
+/// so a retried webhook cannot grant the same subscription twice.
+model CompetitorSlot {
+  id                   String   @id @default(cuid())
+  brand                Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId              String
+  stripeSubscriptionId String?  @unique
+  stripeSessionId      String?  @unique
+  status               String   @default("active")
+  createdAt            DateTime @default(now())
+
+  @@index([brandId, status])
 }
 
 /// A provider answer reused across shops within its TTL: identical phrases in the
@@ -330,15 +347,15 @@ model CreditEntry {
 }
 
 model Alert {
-  id        String   @id @default(cuid())
-  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  id        String    @id @default(cuid())
+  brand     Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
   brandId   String
   kind      String
   fromScore Int?
   toScore   Int?
   message   String
   sentAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([brandId, createdAt])
 }

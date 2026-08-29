@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
+  CompetitorTracker,
   ImportForm,
   LogoutButton,
   RescanButton,
@@ -14,7 +15,8 @@ import { currentUser, entitlement } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { SIGNALS } from "@/lib/rubric/signals";
 import { creditBalance } from "@/lib/visibility/credits";
-import { CREDIT_PACKS, VISIBILITY_PLANS } from "@/lib/visibility/plans";
+import { competitorAllowance, trackedCompetitors } from "@/lib/visibility/competitors";
+import { COMPETITOR_PRICE_CHF, CREDIT_PACKS, VISIBILITY_PLANS } from "@/lib/visibility/plans";
 import type { Recommendation } from "@/lib/visibility/recommend";
 import { latestRun, runHistory, topCompetitors } from "@/lib/visibility/run";
 
@@ -56,11 +58,31 @@ export default async function DashboardPage() {
         take: 300,
         select: { id: true, title: true, priceCents: true, currency: true, tracked: true },
       });
+      const scanHistory = await prisma.scan.findMany({
+        where: { brandId: membership.brandId, status: "COMPLETE" },
+        orderBy: { createdAt: "desc" },
+        take: 12,
+        select: { id: true, score: true, grade: true, createdAt: true },
+      });
       const run = await latestRun(membership.brandId);
       const history = await runHistory(membership.brandId, 8);
       const competitors = await topCompetitors(membership.brandId, 8);
+      const watched = await trackedCompetitors(membership.brandId);
+      const competitorSlots = await competitorAllowance(membership.brandId);
       const credits = await creditBalance(membership.brandId);
-      return { brand: membership.brand, access, scan, products, run, history, competitors, credits };
+      return {
+        brand: membership.brand,
+        access,
+        scan,
+        scanHistory,
+        products,
+        run,
+        history,
+        competitors,
+        watched,
+        competitorSlots,
+        credits,
+      };
     }),
   );
 
@@ -94,7 +116,20 @@ export default async function DashboardPage() {
         </div>
       ) : null}
 
-      {stores.map(({ brand, access, scan, products, run, history, competitors, credits }) => {
+      {stores.map(
+        ({
+          brand,
+          access,
+          scan,
+          scanHistory,
+          products,
+          run,
+          history,
+          competitors,
+          watched,
+          competitorSlots,
+          credits,
+        }) => {
         const premium = access?.premium ?? false;
         const plan = access && access.tier !== "AUDIT" && access.tier !== "NONE" ? VISIBILITY_PLANS[access.tier] : null;
         const failing = scan?.signals.filter((signal) => signal.status !== "pass") ?? [];
@@ -142,6 +177,21 @@ export default async function DashboardPage() {
                   <Link href={`/site/${brand.slug}/report`} className="inline-block text-sm text-accent">
                     Open the fix report →
                   </Link>
+                ) : null}
+                {premium && scanHistory.length > 1 ? (
+                  <div className="pt-2">
+                    <h4 className="text-xs uppercase tracking-wide text-muted">Score history</h4>
+                    <ul className="mt-1 divide-y divide-border text-sm">
+                      {scanHistory.map((entry) => (
+                        <li key={entry.id} className="flex justify-between py-2 first:pt-0">
+                          <span className="tabular text-muted">{entry.createdAt.toISOString().slice(0, 10)}</span>
+                          <span className="tabular">
+                            {entry.score} ({entry.grade})
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ) : null}
               </div>
 
@@ -238,7 +288,7 @@ export default async function DashboardPage() {
 
                   {competitors.length > 0 ? (
                     <div>
-                      <h4 className="text-sm font-semibold">Competitors in your answers</h4>
+                      <h4 className="text-sm font-semibold">Competitors discovered in your answers</h4>
                       <table className="mt-2 w-full text-sm">
                         <thead>
                           <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
@@ -303,9 +353,24 @@ export default async function DashboardPage() {
                 <p className="text-sm text-muted">LLM visibility monitoring is part of the paid plans.</p>
               )}
             </div>
+
+            {premium ? (
+              <div className="space-y-3 border-t border-border pt-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">Tracked competitors</h3>
+                  <CheckoutButton
+                    domain={brand.domain}
+                    product="competitor_slot"
+                    label={`Add a slot — CHF ${COMPETITOR_PRICE_CHF}/mo`}
+                  />
+                </div>
+                <CompetitorTracker brandId={brand.id} competitors={watched} allowance={competitorSlots} />
+              </div>
+            ) : null}
           </section>
         );
-      })}
+        },
+      )}
     </div>
   );
 }
