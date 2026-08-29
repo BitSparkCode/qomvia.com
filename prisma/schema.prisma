@@ -23,6 +23,10 @@ model Brand {
   subscription Subscription?
   auditOrders AuditOrder[]
   alerts      Alert[]
+  products    Product[]
+  imports     ProductImport[]
+  prompts     VisibilityPrompt[]
+  visibilityRuns VisibilityRun[]
 
   @@index([country])
   @@index([industry])
@@ -112,6 +116,106 @@ model AuditOrder {
   paidAt                DateTime?
 
   @@index([brandId])
+}
+
+/// A product imported from a shop feed. Only public catalogue data is stored.
+model Product {
+  id          String   @id @default(cuid())
+  brand       Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId     String
+  externalId  String
+  title       String
+  description String?
+  category    String?
+  vendor      String?
+  priceCents  Int?
+  currency    String?
+  gtin        String?
+  url         String?
+  imageUrl    String?
+  source      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  prompts     VisibilityPrompt[]
+
+  @@unique([brandId, externalId])
+  @@index([brandId])
+}
+
+model ProductImport {
+  id           String    @id @default(cuid())
+  brand        Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId      String
+  source       String
+  sourceUrl    String?
+  status       String    @default("running")
+  productCount Int       @default(0)
+  error        String?
+  createdAt    DateTime  @default(now())
+  finishedAt   DateTime?
+
+  @@index([brandId, createdAt])
+}
+
+/// A search phrase we ask the models, derived from the imported catalogue.
+model VisibilityPrompt {
+  id        String   @id @default(cuid())
+  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId   String
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productId String?
+  text      String
+  intent    String
+  locale    String   @default("de-CH")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  results   VisibilityResult[]
+
+  @@unique([brandId, text])
+  @@index([brandId, active])
+}
+
+model VisibilityRun {
+  id           String    @id @default(cuid())
+  brand        Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId      String
+  status       String    @default("running")
+  trigger      String    @default("manual")
+  providers    String[]
+  promptsRun   Int       @default(0)
+  score        Int?
+  mentionRate  Float?
+  citationRate Float?
+  avgRank      Float?
+  shareOfVoice Json?
+  costCents    Int       @default(0)
+  error        String?
+  createdAt    DateTime  @default(now())
+  finishedAt   DateTime?
+  results      VisibilityResult[]
+
+  @@index([brandId, createdAt])
+}
+
+model VisibilityResult {
+  id          String           @id @default(cuid())
+  run         VisibilityRun    @relation(fields: [runId], references: [id], onDelete: Cascade)
+  runId       String
+  prompt      VisibilityPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  promptId    String
+  provider    String
+  model       String
+  mentioned   Boolean          @default(false)
+  cited       Boolean          @default(false)
+  rank        Int?
+  competitors String[]
+  citations   String[]
+  answer      String
+  error       String?
+  createdAt   DateTime         @default(now())
+
+  @@index([runId])
+  @@index([promptId, createdAt])
 }
 
 model Alert {
