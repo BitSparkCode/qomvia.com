@@ -10,6 +10,15 @@ export const metadata: Metadata = {
   alternates: { canonical: absoluteUrl("/methodology") },
 };
 
+const DIMENSION_NOTES: Record<DimensionId, string> = {
+  access: "Whether an AI crawler is allowed in at all, and whether the page it receives contains your content.",
+  data: "Whether products, prices, availability and identifiers are readable without rendering JavaScript.",
+  protocols: "Whether the machine surfaces agents look for exist: feeds, llms.txt, MCP discovery, agentic checkout.",
+  checkout: "Whether an agent can get from a product to a payable checkout without an account or a human.",
+  performance: "Whether pages answer fast and light enough to be fetched and re-fetched by a bot.",
+  policy: "Whether your terms for automated access and a machine-readable contact are published.",
+};
+
 export default function MethodologyPage() {
   return (
     <div className="space-y-12">
@@ -34,15 +43,19 @@ export default function MethodologyPage() {
         </ul>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="border-b border-rule pb-2 text-2xl">What we score</h2>
-        <ul className="divide-y divide-border text-sm text-muted">
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-rule pb-2">
+          <h2 className="text-2xl">What we score</h2>
+          <p className="text-xs text-muted">Six categories, 21 checks, one 0–100 score</p>
+        </div>
+        <dl className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
           {(Object.keys(DIMENSIONS) as DimensionId[]).map((dimensionId) => (
-            <li key={dimensionId} className="py-2">
-              {DIMENSIONS[dimensionId].label}
-            </li>
+            <div key={dimensionId} className="border-t border-border pt-3">
+              <dt className="text-base">{DIMENSIONS[dimensionId].label}</dt>
+              <dd className="mt-1 text-sm leading-relaxed text-muted">{DIMENSION_NOTES[dimensionId]}</dd>
+            </div>
           ))}
-        </ul>
+        </dl>
         <p className="text-sm leading-relaxed text-muted">
           The signal-by-signal rubric, with the measurement behind every check, is in your{" "}
           <Link href="/methodology/signals" className="link-underline">
@@ -54,13 +67,30 @@ export default function MethodologyPage() {
 
       <section className="space-y-3">
         <h2 className="border-b border-rule pb-2 text-2xl">Grades</h2>
-        <ul className="divide-y divide-border text-sm text-muted">
-          <li className="py-2">A — 90 to 100: an agent can find, read and reach checkout without special handling.</li>
-          <li className="py-2">B — 75 to 89: usable, with gaps that cost you in comparisons.</li>
-          <li className="py-2">C — 60 to 74: an agent can read you but will struggle to transact.</li>
-          <li className="py-2">D — 40 to 59: significant blockers; most agent journeys fail.</li>
-          <li className="py-2">F — below 40: effectively invisible or closed to agents.</li>
-        </ul>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-left">
+              <th className="eyebrow w-12 py-2 font-normal">Grade</th>
+              <th className="eyebrow w-24 py-2 font-normal">Score</th>
+              <th className="eyebrow py-2 font-normal">What it means for an agent</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {[
+              ["A", "90–100", "Finds, reads and reaches checkout without special handling."],
+              ["B", "75–89", "Usable, with gaps that cost you in comparisons."],
+              ["C", "60–74", "Can read you, but will struggle to transact."],
+              ["D", "40–59", "Significant blockers; most agent journeys fail."],
+              ["F", "below 40", "Effectively invisible or closed to agents."],
+            ].map(([grade, range, meaning]) => (
+              <tr key={grade}>
+                <td className="py-2.5 font-serif text-lg">{grade}</td>
+                <td className="tabular py-2.5 text-muted">{range}</td>
+                <td className="py-2.5 leading-relaxed text-muted">{meaning}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </section>
 
       <section id="corrections" className="space-y-3 border-y border-rule bg-raised px-6 py-6">

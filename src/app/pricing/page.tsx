@@ -53,6 +53,33 @@ const TIERS = [
   },
 ];
 
+const MATRIX: { label: string; free: string; monitor: string; agency: string }[] = [
+  { label: "Public score, grade and badge", free: "✓", monitor: "✓", agency: "✓" },
+  { label: "Fix report: what to change, and the file to paste", free: "—", monitor: "✓", agency: "✓" },
+  { label: "Readiness re-scans", free: "—", monitor: "Weekly", agency: "Daily" },
+  {
+    label: "Buying questions per visibility run",
+    free: "—",
+    monitor: VISIBILITY_PLANS.MONITOR.promptBudget.toLocaleString("en-CH"),
+    agency: VISIBILITY_PLANS.AGENCY.promptBudget.toLocaleString("en-CH"),
+  },
+  { label: "Models asked", free: "—", monitor: "2", agency: "4" },
+  {
+    label: "Market locales",
+    free: "—",
+    monitor: String(VISIBILITY_PLANS.MONITOR.locales),
+    agency: String(VISIBILITY_PLANS.AGENCY.locales),
+  },
+  {
+    label: "Tracked competitor domains included",
+    free: "—",
+    monitor: String(VISIBILITY_PLANS.MONITOR.includedCompetitors),
+    agency: String(VISIBILITY_PLANS.AGENCY.includedCompetitors),
+  },
+  { label: "Shops per account", free: "—", monitor: "1", agency: "25" },
+  { label: "White-label reports and API access", free: "—", monitor: "—", agency: "✓" },
+];
+
 export default function PricingPage() {
   return (
     <div className="space-y-10">
@@ -60,7 +87,8 @@ export default function PricingPage() {
         <p className="eyebrow">Plans</p>
         <h1 className="font-serif text-4xl tracking-tight">Pricing</h1>
         <p className="max-w-2xl leading-relaxed text-muted">
-          The score is free and always public. You pay to track your products inside AI answers, week after week.
+          The score is free and always public. You pay for the fix list behind it and for tracking your products inside
+          AI answers, week after week.
         </p>
       </header>
 
@@ -86,6 +114,36 @@ export default function PricingPage() {
           </div>
         ))}
       </div>
+
+      <section className="space-y-4 border-t border-border pt-6">
+        <h2 className="text-xl">Side by side</h2>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-foreground text-left">
+              <th className="eyebrow py-2 font-normal">What you get</th>
+              <th className="eyebrow w-24 py-2 text-right font-normal">Free</th>
+              <th className="eyebrow w-28 py-2 text-right font-normal">Monitoring</th>
+              <th className="eyebrow w-24 py-2 text-right font-normal">Agency</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {MATRIX.map((row) => (
+              <tr key={row.label}>
+                <td className="py-2.5 leading-relaxed">{row.label}</td>
+                {([
+                  ["free", row.free],
+                  ["monitor", row.monitor],
+                  ["agency", row.agency],
+                ] as const).map(([plan, cell]) => (
+                  <td key={plan} className="tabular py-2.5 text-right text-muted">
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
 
       <section className="space-y-3 border-t border-border pt-6">
         <h2 className="text-xl">Credits</h2>
