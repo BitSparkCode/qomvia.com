@@ -4,6 +4,9 @@ import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   addCompetitorAction,
+  attachStoreAction,
+  claimStoreAction,
+  detachStoreAction,
   importProductsAction,
   removeCompetitorAction,
   logoutAction,
@@ -248,6 +251,130 @@ export function LogoutButton() {
       <button type="submit" className="text-sm text-muted hover:text-foreground">
         Sign out
       </button>
+    </form>
+  );
+}
+
+export type AttachedStore = {
+  brandId: string;
+  name: string;
+  domain: string;
+  slug: string;
+  kind: string;
+  verified: boolean;
+  job: { state: string; source: string | null; itemsImported: number; error: string | null } | null;
+};
+
+const JOB_LABEL: Record<string, string> = {
+  queued: "queued",
+  discovering: "finding a catalogue source",
+  fetching: "fetching",
+  parsing: "parsing",
+  done: "imported",
+  failed: "failed",
+};
+
+export function StoreAttacher({ budget }: { budget: { used: number; allowance: number } }) {
+  const [state, formAction] = useActionState<FormState, FormData>(attachStoreAction, {});
+  const [kind, setKind] = useState("owned");
+  return (
+    <form action={formAction} className="space-y-3">
+      <div className="flex flex-wrap gap-2 text-sm">
+        {[
+          { id: "owned", label: "My store" },
+          { id: "watched", label: "A competitor" },
+        ].map((option) => (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => setKind(option.id)}
+            className={`border px-3 py-1.5 ${kind === option.id ? "border-accent text-accent" : "border-border text-muted"}`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+      <input type="hidden" name="kind" value={kind} />
+      <input
+        name="domain"
+        placeholder="kuhteilen.ch"
+        className="w-full border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-accent"
+      />
+      <p className="text-xs text-muted">
+        {kind === "owned"
+          ? "We mail a code to an address at the domain. Confirming it unlocks re-scans, the fix report and the seal."
+          : `No proof needed — everything we measure is public. Watching ${budget.used} of ${budget.allowance} domains; extra slots are CHF 19/mo each.`}
+      </p>
+      <Submit idle="Attach store" busy="Attaching…" variant="outline" />
+      <Feedback state={state} />
+    </form>
+  );
+}
+
+export function StoreList({ stores }: { stores: AttachedStore[] }) {
+  const [state, formAction] = useActionState<FormState, FormData>(detachStoreAction, {});
+  if (stores.length === 0) return null;
+  return (
+    <div className="space-y-2">
+      <ul className="divide-y divide-border border-t border-border">
+        {stores.map((store) => (
+          <li key={store.brandId} className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm">
+            <span>
+              {store.domain}
+              <span className="ml-2 font-mono text-[0.625rem] uppercase tracking-widest text-muted">
+                {store.kind === "owned" ? (store.verified ? "owned" : "unverified") : "watched"}
+              </span>
+            </span>
+            <span className="flex items-center gap-3 text-xs text-muted">
+              <span>
+                {store.job
+                  ? `${JOB_LABEL[store.job.state] ?? store.job.state}${
+                      store.job.itemsImported > 0 ? ` · ${store.job.itemsImported} products` : ""
+                    }`
+                  : "no import yet"}
+              </span>
+              <form action={formAction}>
+                <input type="hidden" name="brandId" value={store.brandId} />
+                <button type="submit" className="link-underline">
+                  Detach
+                </button>
+              </form>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <Feedback state={state} />
+    </div>
+  );
+}
+
+export function StoreClaim({ brandId, mailboxes }: { brandId: string; mailboxes: string[] }) {
+  const [state, formAction] = useActionState<FormState, FormData>(claimStoreAction, {});
+  return (
+    <form action={formAction} className="space-y-3">
+      <input type="hidden" name="brandId" value={brandId} />
+      <div className="flex flex-wrap gap-2">
+        <select
+          name="mailbox"
+          className="border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-accent"
+        >
+          {mailboxes.map((mailbox) => (
+            <option key={mailbox} value={mailbox}>
+              {mailbox}@
+            </option>
+          ))}
+        </select>
+        <input
+          name="code"
+          placeholder="Code from the email"
+          className="flex-1 border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-accent"
+        />
+      </div>
+      <p className="text-xs text-muted">
+        Send a code to one of these addresses, then paste it back here. Leave the code empty to request one.
+      </p>
+      <Submit idle="Send or confirm code" busy="Working…" variant="outline" />
+      <Feedback state={state} />
     </form>
   );
 }
