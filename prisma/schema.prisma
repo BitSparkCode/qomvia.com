@@ -28,6 +28,9 @@ model Brand {
   prompts         VisibilityPrompt[]
   visibilityRuns  VisibilityRun[]
   members         BrandMember[]
+  storeLinks      StoreLink[]
+  domainClaims    DomainClaim[]
+  importJobs      ImportJob[]
   credits         CreditEntry[]
   competitors     Competitor[]
   competitorSlots CompetitorSlot[]
@@ -239,6 +242,8 @@ model User {
   updatedAt   DateTime      @updatedAt
   memberships BrandMember[]
   sessions    AuthSession[]
+  storeLinks  StoreLink[]
+  claims      DomainClaim[]
 }
 
 /// Which shops an account may see and re-scan.
@@ -357,5 +362,62 @@ model Alert {
   sentAt    DateTime?
   createdAt DateTime  @default(now())
 
+  @@index([brandId, createdAt])
+}
+
+/// A store an account keeps: its own (proved by an email at the domain) or a
+/// competitor's, which needs no proof because everything measured is public.
+model StoreLink {
+  id         String    @id @default(cuid())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  brand      Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId    String
+  kind       String    @default("watched")
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@unique([userId, brandId])
+  @@index([brandId])
+}
+
+/// Ownership proof: a code mailed to a role address at the domain. Only the hash
+/// is stored, so the mailbox is the only place the code exists.
+model DomainClaim {
+  id        String    @id @default(cuid())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  brand     Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId   String
+  email     String
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, brandId, createdAt])
+}
+
+/// Catalogue scraping is a resumable job, not a request: a large catalogue
+/// survives a timeout and the dashboard can show where it got to.
+model ImportJob {
+  id            String    @id @default(cuid())
+  brand         Brand     @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId       String
+  kind          String    @default("watched")
+  state         String    @default("queued")
+  source        String?
+  sourceUrl     String?
+  maxProducts   Int
+  itemsFound    Int       @default(0)
+  itemsImported Int       @default(0)
+  attempts      Int       @default(0)
+  error         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  startedAt     DateTime?
+  finishedAt    DateTime?
+
+  @@index([state, createdAt])
   @@index([brandId, createdAt])
 }

@@ -6,6 +6,9 @@ import {
   ImportForm,
   LogoutButton,
   RescanButton,
+  StoreAttacher,
+  StoreClaim,
+  StoreList,
   VisibilityRunButton,
   Watchlist,
 } from "@/components/dashboard-actions";
@@ -14,6 +17,9 @@ import { Disclosure, VerdictRow } from "@/components/report";
 import { StatusIcon, verdictFromStatus } from "@/components/score";
 import { currentUser, entitlement } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { importJobs } from "@/lib/products/jobs";
+import { CLAIM_MAILBOXES } from "@/lib/stores/claim";
+import { storeLinks, watchedStoreBudget } from "@/lib/stores/link";
 import { SIGNALS } from "@/lib/rubric/signals";
 import { creditBalance } from "@/lib/visibility/credits";
 import { competitorAllowance, trackedCompetitors } from "@/lib/visibility/competitors";
@@ -87,6 +93,24 @@ export default async function DashboardPage() {
     }),
   );
 
+  const links = await storeLinks(user.id);
+  const watchedBudget = await watchedStoreBudget(user.id);
+  const attached = await Promise.all(
+    links.map(async (link) => {
+      const [job] = await importJobs(link.brandId, 1);
+      return {
+        brandId: link.brandId,
+        name: link.brand.name,
+        domain: link.brand.domain,
+        slug: link.brand.slug,
+        kind: link.kind,
+        verified: link.verifiedAt !== null,
+        job: job ? { state: job.state, source: job.source, itemsImported: job.itemsImported, error: job.error } : null,
+      };
+    }),
+  );
+  const unverified = attached.filter((store) => store.kind === "owned" && !store.verified);
+
   const titles = new Map(SIGNALS.map((signal) => [signal.id, signal.title]));
 
   return (
@@ -104,12 +128,33 @@ export default async function DashboardPage() {
         </div>
       </header>
 
+      <section className="space-y-4 border border-border bg-surface p-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-3 border-b border-rule pb-2">
+          <h2 className="text-2xl">Attached stores</h2>
+          <p className="text-xs text-muted">
+            Watching {watchedBudget.used} of {watchedBudget.allowance} domains
+          </p>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+          <StoreAttacher budget={watchedBudget} />
+          <div className="space-y-4">
+            <StoreList stores={attached} />
+            {unverified.map((store) => (
+              <div key={store.brandId} className="space-y-2 border-t border-border pt-3">
+                <p className="text-sm">Confirm you own {store.domain}</p>
+                <StoreClaim brandId={store.brandId} mailboxes={CLAIM_MAILBOXES} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {stores.length === 0 ? (
         <div className="border border-border bg-surface p-6">
-          <h2 className="font-semibold">No store attached yet</h2>
+          <h2 className="font-semibold">No verified store yet</h2>
           <p className="mt-2 text-sm text-muted">
-            Stores are attached automatically to the email you paid with. If you used a different address, buy a plan
-            with this one or write to hello@qomvia.com.
+            Attach your own domain above and confirm the emailed code, or buy a plan with this address — a paid store is
+            attached automatically.
           </p>
           <Link href="/pricing" className="mt-4 inline-block text-sm text-accent">
             See plans →

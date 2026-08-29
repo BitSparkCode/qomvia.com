@@ -1,6 +1,7 @@
 {
   "crons": [
     { "path": "/api/cron/rescan", "schedule": "0 3 * * *" },
-    { "path": "/api/cron/visibility", "schedule": "0 4 * * *" }
+    { "path": "/api/cron/visibility", "schedule": "0 4 * * *" },
+    { "path": "/api/cron/imports", "schedule": "*/15 * * * *" }
   ]
 }

@@ -6,6 +6,9 @@ import { createLoginToken, currentUser, endSession, entitlement, normalizeEmail 
 import { loginLink, sendLoginEmail } from "@/lib/email";
 import { prisma } from "@/lib/db";
 import { importFromCsv, importFromShopifyDomain, importFromUrl } from "@/lib/products/import";
+import { runNextImportJob } from "@/lib/products/jobs";
+import { confirmDomainClaim, startDomainClaim } from "@/lib/stores/claim";
+import { attachStore, detachStore } from "@/lib/stores/link";
 import { RESCAN_COOLDOWN_MS, scanDomain } from "@/lib/scan-service";
 import { addTrackedCompetitor, untrackCompetitor } from "@/lib/visibility/competitors";
 import { runVisibility } from "@/lib/visibility/run";
@@ -32,15 +35,63 @@ export async function requestLoginAction(_state: FormState, formData: FormData):
   return { ok: `Sign-in link sent to ${email}. It expires in 20 minutes.` };
 }
 
+export async function attachStoreAction(_state: FormState, formData: FormData): Promise<FormState> {
+  const user = await currentUser();
+  if (!user) return { error: "Sign in first." };
+
+  const kind = String(formData.get("kind") ?? "watched") === "owned" ? "owned" : "watched";
+  const result = await attachStore(user.id, String(formData.get("domain") ?? ""), kind);
+  if ("error" in result) return { error: result.error };
+
+  await runNextImportJob();
+  revalidatePath("/dashboard");
+  return { ok: result.ok };
+}
+
+export async function detachStoreAction(_state: FormState, formData: FormData): Promise<FormState> {
+  const user = await currentUser();
+  if (!user) return { error: "Sign in first." };
+
+  await detachStore(user.id, String(formData.get("brandId") ?? ""));
+  revalidatePath("/dashboard");
+  return { ok: "Store detached." };
+}
+
+export async function claimStoreAction(_state: FormState, formData: FormData): Promise<FormState> {
+  const user = await currentUser();
+  if (!user) return { error: "Sign in first." };
+
+  const brandId = String(formData.get("brandId") ?? "");
+  const code = String(formData.get("code") ?? "").trim();
+  const result = code
+    ? await confirmDomainClaim(user.id, brandId, code)
+    : await startDomainClaim(user.id, brandId, String(formData.get("mailbox") ?? ""));
+  if ("error" in result) return { error: result.error };
+
+  revalidatePath("/dashboard");
+  return { ok: result.ok };
+}
+
 export async function logoutAction(): Promise<void> {
   await endSession();
   redirect("/login");
 }
 
-/** Every premium action re-checks session, membership and payment status. */
+/**
+ * Every premium action re-checks session, ownership and payment. A store that is
+ * only watched, or claimed but never confirmed, cannot be re-scanned or fixed:
+ * those actions speak for the shop.
+ */
 async function requirePremium(brandId: string) {
   const user = await currentUser();
   if (!user) return { error: "Sign in first." as const };
+  const link = await prisma.storeLink.findUnique({
+    where: { userId_brandId: { userId: user.id, brandId } },
+    select: { kind: true, verifiedAt: true },
+  });
+  if (link && (link.kind !== "owned" || link.verifiedAt === null)) {
+    return { error: "Confirm an email at the store's domain first." as const };
+  }
   const access = await entitlement(user.id, brandId);
   if (!access) return { error: "This store is not on your account." as const };
   if (!access.premium) return { error: "Re-scans and imports are part of the paid plans." as const };
