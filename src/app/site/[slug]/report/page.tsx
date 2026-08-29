@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { DimensionBars, StatusPill } from "@/components/score";
+import { DimensionList, StatusIcon, verdictFromStatus } from "@/components/score";
 import { DeepAuditButton } from "@/components/deep-audit-button";
 import { paidAccess } from "@/lib/access";
 import { prisma } from "@/lib/db";
@@ -16,6 +16,14 @@ export const metadata: Metadata = {
   title: "Fix report",
   robots: { index: false, follow: false },
 };
+
+/** Impact is expressed in words, not points, so the report reads as a to-do list. */
+function impactLabel(missing: number): string {
+  if (missing >= 8) return "critical";
+  if (missing >= 4) return "high impact";
+  if (missing >= 1.5) return "medium impact";
+  return "polish";
+}
 
 export default async function ReportPage({
   params,
@@ -39,7 +47,7 @@ export default async function ReportPage({
         <h1 className="text-3xl font-semibold tracking-tight">Fix report for {brand.domain}</h1>
         <p className="text-muted">
           The public score page shows every measurement we took. This report adds what to do about it: the files to
-          publish, the markup and headers to change, and the order that recovers the most points first.
+          publish, the markup and headers to change, and the order to work through them in.
         </p>
         <p className="text-sm text-muted">
           Access is tied to the Stripe receipt link you get after payment — open the link from your confirmation page or
@@ -89,8 +97,6 @@ export default async function ReportPage({
     .map((signal) => ({ signal, definition: SIGNALS.find((entry) => entry.id === signal.signalId) }))
     .sort((a, b) => b.signal.maxPoints - b.signal.points - (a.signal.maxPoints - a.signal.points));
 
-  const recoverable = failing.reduce((total, row) => total + (row.signal.maxPoints - row.signal.points), 0);
-
   return (
     <div className="space-y-10">
       <header className="space-y-3">
@@ -102,14 +108,15 @@ export default async function ReportPage({
           {new Date(scan.createdAt).toISOString().slice(0, 10)}
         </p>
         <p className="text-sm">
-          Fixing everything below recovers up to{" "}
-          <span className="font-mono text-accent">{Math.round(recoverable)}</span> points.
+          {failing.length === 0
+            ? "Nothing is failing right now."
+            : `${failing.length} ${failing.length === 1 ? "item" : "items"} to fix, highest impact first.`}
         </p>
       </header>
 
       <section className="rounded-xl border border-border bg-surface p-5">
-        <h2 className="mb-4 font-semibold">Score by dimension</h2>
-        <DimensionBars dimensions={dimensions} />
+        <h2 className="mb-4 font-semibold">Readiness by dimension</h2>
+        <DimensionList dimensions={dimensions} />
       </section>
 
       <section className="space-y-4">
@@ -122,10 +129,10 @@ export default async function ReportPage({
               <li key={signal.id} className="rounded-xl border border-border p-4">
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="font-mono text-xs text-muted">{index + 1}</span>
-                  <StatusPill status={signal.status} />
+                  <StatusIcon verdict={verdictFromStatus(signal.status)} />
                   <span className="font-medium">{definition?.title ?? signal.signalId}</span>
-                  <span className="ml-auto font-mono text-xs text-accent">
-                    +{Math.round((signal.maxPoints - signal.points) * 10) / 10} pts
+                  <span className="ml-auto text-xs uppercase tracking-wide text-accent">
+                    {impactLabel(signal.maxPoints - signal.points)}
                   </span>
                 </div>
                 <p className="mt-2 text-sm text-muted">{signal.detail}</p>

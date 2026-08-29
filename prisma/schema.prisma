@@ -27,6 +27,7 @@ model Brand {
   imports     ProductImport[]
   prompts     VisibilityPrompt[]
   visibilityRuns VisibilityRun[]
+  members     BrandMember[]
 
   @@index([country])
   @@index([industry])
@@ -216,6 +217,54 @@ model VisibilityResult {
 
   @@index([runId])
   @@index([promptId, createdAt])
+}
+
+/// A merchant account. Passwordless: identity is proven by an emailed link.
+model User {
+  id          String        @id @default(cuid())
+  email       String        @unique
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  memberships BrandMember[]
+  sessions    AuthSession[]
+}
+
+/// Which shops an account may see and re-scan.
+model BrandMember {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId   String
+  role      String   @default("owner")
+  createdAt DateTime @default(now())
+
+  @@unique([userId, brandId])
+  @@index([brandId])
+}
+
+/// Only the hash of a session token is stored, so a database leak is not a login.
+model AuthSession {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+/// Single-use magic-link token, hashed and short-lived.
+model LoginToken {
+  id        String    @id @default(cuid())
+  email     String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email, createdAt])
 }
 
 model Alert {
