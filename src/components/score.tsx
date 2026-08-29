@@ -2,42 +2,41 @@ import { gradeColor } from "@/lib/site";
 import type { DimensionScore } from "@/lib/rubric/types";
 
 export function ScoreDial({ score, grade, size = 148 }: { score: number; grade: string; size?: number }) {
-  const radius = size / 2 - 10;
+  const radius = size / 2 - 6;
   const circumference = 2 * Math.PI * radius;
   const color = gradeColor(score);
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} role="img" aria-label={`Score ${score} of 100`}>
-      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#1e2632" strokeWidth={10} />
+      <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="#e0dcd2" strokeWidth={2} />
       <circle
         cx={size / 2}
         cy={size / 2}
         r={radius}
         fill="none"
         stroke={color}
-        strokeWidth={10}
-        strokeLinecap="round"
+        strokeWidth={2}
         strokeDasharray={`${(circumference * score) / 100} ${circumference}`}
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
       />
       <text
         x="50%"
-        y="47%"
+        y="49%"
         textAnchor="middle"
         dominantBaseline="middle"
         fill={color}
-        fontSize={size * 0.28}
-        fontWeight={700}
-        fontFamily="ui-sans-serif, system-ui, sans-serif"
+        fontSize={size * 0.34}
+        fontFamily="var(--font-serif), Georgia, serif"
       >
         {score}
       </text>
       <text
         x="50%"
-        y="68%"
+        y="72%"
         textAnchor="middle"
-        fill="#8d9bad"
-        fontSize={size * 0.11}
-        fontFamily="ui-sans-serif, system-ui, sans-serif"
+        fill="#6a675f"
+        fontSize={size * 0.085}
+        letterSpacing={size * 0.012}
+        fontFamily="var(--font-mono), ui-monospace, monospace"
       >
         GRADE {grade}
       </text>
@@ -64,21 +63,21 @@ export function verdictFromShare(points: number, max: number): Verdict {
 }
 
 const VERDICT: Record<Verdict, { glyph: string; className: string; label: string }> = {
-  ok: { glyph: "✓", className: "text-accent border-accent/40 bg-accent/10", label: "ok" },
-  warn: { glyph: "!", className: "text-warn border-warn/40 bg-warn/10", label: "needs attention" },
-  missing: { glyph: "✕", className: "text-bad border-bad/40 bg-bad/10", label: "missing" },
-  unknown: { glyph: "?", className: "text-muted border-border bg-surface", label: "not determined" },
+  ok: { glyph: "✓", className: "text-accent border-accent", label: "ok" },
+  warn: { glyph: "!", className: "text-warn border-warn", label: "needs attention" },
+  missing: { glyph: "✕", className: "text-bad border-bad", label: "missing" },
+  unknown: { glyph: "?", className: "text-muted border-border", label: "not determined" },
 };
 
-export function StatusIcon({ verdict, size = 22 }: { verdict: Verdict; size?: number }) {
+export function StatusIcon({ verdict, size = 20 }: { verdict: Verdict; size?: number }) {
   const style = VERDICT[verdict];
   return (
     <span
       role="img"
       aria-label={style.label}
       title={style.label}
-      className={`inline-flex shrink-0 items-center justify-center rounded-full border font-semibold leading-none ${style.className}`}
-      style={{ width: size, height: size, fontSize: size * 0.6 }}
+      className={`inline-flex shrink-0 items-center justify-center rounded-full border leading-none ${style.className}`}
+      style={{ width: size, height: size, fontSize: size * 0.58 }}
     >
       {style.glyph}
     </span>
@@ -87,9 +86,9 @@ export function StatusIcon({ verdict, size = 22 }: { verdict: Verdict; size?: nu
 
 export function DimensionList({ dimensions }: { dimensions: DimensionScore[] }) {
   return (
-    <ul className="space-y-3">
+    <ul className="divide-y divide-border">
       {dimensions.map((dimension) => (
-        <li key={dimension.id} className="flex items-center gap-3 text-sm">
+        <li key={dimension.id} className="flex items-center gap-3 py-2.5 text-sm first:pt-0 last:pb-0">
           <StatusIcon verdict={verdictFromShare(dimension.points, dimension.max)} />
           <span>{dimension.label}</span>
         </li>

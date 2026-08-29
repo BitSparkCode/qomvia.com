@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DimensionList, StatusIcon, verdictFromStatus } from "@/components/score";
-import { DeepAuditButton } from "@/components/deep-audit-button";
+import { CheckoutButton } from "@/components/checkout-button";
 import { paidAccess } from "@/lib/access";
 import { prisma } from "@/lib/db";
 import { SIGNALS } from "@/lib/rubric/signals";
 import { type DimensionScore } from "@/lib/rubric/types";
-import { DEEP_AUDIT_PRICE_CHF, MONITOR_PRICE_CHF } from "@/lib/site";
+import { MONITOR_PRICE_CHF } from "@/lib/site";
 
 /** Paid deliverable: never cached publicly and never indexed. */
 export const dynamic = "force-dynamic";
@@ -44,25 +44,20 @@ export default async function ReportPage({
   if (!access) {
     return (
       <div className="mx-auto max-w-2xl space-y-6">
-        <h1 className="text-3xl font-semibold tracking-tight">Fix report for {brand.domain}</h1>
+        <h1 className="font-serif text-4xl tracking-tight">Fix report for {brand.domain}</h1>
         <p className="text-muted">
           The public score page shows every measurement we took. This report adds what to do about it: the files to
           publish, the markup and headers to change, and the order to work through them in.
         </p>
         <p className="text-sm text-muted">
-          Access is tied to the Stripe receipt link you get after payment — open the link from your confirmation page or
-          email. If you already paid and lost the link, email hello@qomvia.com from an address on your domain.
+          Access comes with a plan for this shop. If you already pay and cannot see the report, sign in with the email
+          you paid with, or write to hello@qomvia.com from an address on your domain.
         </p>
         <div className="flex flex-wrap gap-3">
-          <DeepAuditButton domain={brand.domain} label={`Unlock the fix list — CHF ${DEEP_AUDIT_PRICE_CHF}`} />
-          <DeepAuditButton
-            domain={brand.domain}
-            product="monitor"
-            label={`Monitor monthly — CHF ${MONITOR_PRICE_CHF}/mo`}
-          />
+          <CheckoutButton domain={brand.domain} label={`Start monitoring — CHF ${MONITOR_PRICE_CHF}/mo`} />
         </div>
         <p className="text-sm">
-          <Link href={`/site/${slug}`} className="text-accent">
+          <Link href={`/site/${slug}`} className="link-underline">
             ← Back to the public score
           </Link>
         </p>
@@ -83,7 +78,7 @@ export default async function ReportPage({
   if (!scan) {
     return (
       <div className="mx-auto max-w-2xl space-y-4">
-        <h1 className="text-3xl font-semibold tracking-tight">Fix report for {brand.domain}</h1>
+        <h1 className="font-serif text-4xl tracking-tight">Fix report for {brand.domain}</h1>
         <p className="text-muted">
           Your deep scan is still running. Reload this page in a few minutes — the link stays valid.
         </p>
@@ -101,7 +96,7 @@ export default async function ReportPage({
     <div className="space-y-10">
       <header className="space-y-3">
         <p className="text-xs uppercase tracking-wide text-accent">Paid report · not indexed</p>
-        <h1 className="text-3xl font-semibold tracking-tight">Fix report for {brand.domain}</h1>
+        <h1 className="font-serif text-4xl tracking-tight">Fix report for {brand.domain}</h1>
         <p className="text-muted">
           {scan.score}/100 (grade {scan.grade}) · {scan.mode === "DEEP" ? "deep" : "shallow"} scan of{" "}
           {scan.urlsFetched} URLs · rubric v{scan.rubricVersion} ·{" "}
@@ -114,19 +109,19 @@ export default async function ReportPage({
         </p>
       </header>
 
-      <section className="rounded-xl border border-border bg-surface p-5">
+      <section className="panel p-5">
         <h2 className="mb-4 font-semibold">Readiness by dimension</h2>
         <DimensionList dimensions={dimensions} />
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold">Fix list, highest value first</h2>
+        <h2 className="border-b border-rule pb-2 text-2xl">Fix list, highest value first</h2>
         {failing.length === 0 ? (
           <p className="text-muted">Nothing is failing. Keep monitoring so a template change does not undo it.</p>
         ) : (
           <ol className="space-y-4">
             {failing.map(({ signal, definition }, index) => (
-              <li key={signal.id} className="rounded-xl border border-border p-4">
+              <li key={signal.id} className="border border-border p-4">
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="font-mono text-xs text-muted">{index + 1}</span>
                   <StatusIcon verdict={verdictFromStatus(signal.status)} />
@@ -139,13 +134,13 @@ export default async function ReportPage({
                 {definition ? (
                   <>
                     <p className="mt-2 text-sm">
-                      <span className="text-accent">Fix:</span> {definition.fix}
+                      <span className="link-underline">Fix:</span> {definition.fix}
                     </p>
                     <p className="mt-1 text-xs text-muted">Why it matters: {definition.why}</p>
                   </>
                 ) : null}
                 {signal.evidence ? (
-                  <pre className="mt-3 overflow-x-auto rounded-lg bg-surface p-3 text-xs text-muted">
+                  <pre className="mt-3 overflow-x-auto bg-surface p-3 text-xs text-muted">
                     {JSON.stringify(signal.evidence, null, 2)}
                   </pre>
                 ) : null}

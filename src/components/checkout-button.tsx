@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { DEEP_AUDIT_PRICE_CHF } from "@/lib/site";
+import { MONITOR_PRICE_CHF } from "@/lib/site";
 
-export function DeepAuditButton({
+export function CheckoutButton({
   domain,
-  product = "deep_audit",
-  label = `Get the deep audit — CHF ${DEEP_AUDIT_PRICE_CHF}`,
+  product = "monitor",
+  label = `Start visibility monitoring — CHF ${MONITOR_PRICE_CHF}/mo`,
 }: {
   domain: string;
-  product?: "deep_audit" | "monitor" | "agency";
+  product?: "monitor" | "agency" | "pack_1000" | "pack_5000";
   label?: string;
 }) {
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
@@ -39,12 +39,7 @@ export function DeepAuditButton({
 
   return (
     <span className="inline-flex flex-col gap-1">
-      <button
-        type="button"
-        onClick={start}
-        disabled={state === "loading"}
-        className="rounded-lg bg-accent px-4 py-2 font-semibold text-black disabled:opacity-60"
-      >
+      <button type="button" onClick={start} disabled={state === "loading"} className="btn">
         {state === "loading" ? "Opening checkout…" : label}
       </button>
       {message ? <span className="max-w-xs text-xs text-warn">{message}</span> : null}

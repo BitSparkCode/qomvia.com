@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { IBM_Plex_Mono, Inter, Newsreader } from "next/font/google";
 import "./globals.css";
 import { Logo } from "@/components/logo";
+import { SiteFooter } from "@/components/site-footer";
+import { SiteNav } from "@/components/site-nav";
 import { SITE_NAME, SITE_TAGLINE, siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -16,46 +19,31 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image" },
 };
 
-const NAV = [
-  { href: "/leaderboard", label: "Leaderboard" },
-  { href: "/methodology", label: "Methodology" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/report", label: "State of agent commerce" },
-  { href: "/dashboard", label: "Sign in" },
-];
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const newsreader = Newsreader({ subsets: ["latin"], variable: "--font-newsreader", style: ["normal", "italic"] });
+const plexMono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-plex-mono" });
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html
+      lang="en"
+      className={`h-full antialiased ${inter.variable} ${newsreader.variable} ${plexMono.variable}`}
+    >
       <body className="flex min-h-full flex-col">
-        <header className="border-b border-border">
-          <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-4">
-            <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
+        <header className="border-b border-rule">
+          <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-x-8 gap-y-3 px-6 py-4">
+            <Link href="/" className="flex items-center gap-2.5">
               <Logo size={26} />
-              {SITE_NAME}
+              <span className="font-serif text-xl tracking-tight">{SITE_NAME}</span>
+              <span className="hidden border-l border-border pl-2.5 text-xs text-muted lg:inline">
+                Agent readiness, measured
+              </span>
             </Link>
-            <nav className="flex flex-wrap items-center gap-4 text-sm text-muted">
-              {NAV.map((item) => (
-                <Link key={item.href} href={item.href} className="hover:text-foreground">
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+            <SiteNav />
           </div>
         </header>
-        <main className="mx-auto w-full max-w-5xl flex-1 px-5 py-10">{children}</main>
-        <footer className="border-t border-border">
-          <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-5 py-6 text-xs text-muted">
-            <span>
-              {SITE_NAME} — independent measurement of agent readiness. Scores are computed from public HTTP responses.
-            </span>
-            <span className="flex gap-4">
-              <Link href="/bot">About our crawler</Link>
-              <Link href="/opt-out">Opt out</Link>
-              <Link href="/api/docs">API</Link>
-            </span>
-          </div>
-        </footer>
+        <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-14">{children}</main>
+        <SiteFooter />
       </body>
     </html>
   );

@@ -18,7 +18,7 @@ export default async function LoginPage() {
 
   return (
     <div className="mx-auto max-w-md space-y-6">
-      <h1 className="text-3xl font-semibold tracking-tight">Sign in</h1>
+      <h1 className="font-serif text-4xl tracking-tight">Sign in</h1>
       <p className="text-muted">
         We email you a one-time link — no password to remember or leak. Use the address you paid with and your store is
         already attached to the account.
@@ -27,7 +27,7 @@ export default async function LoginPage() {
       <p className="text-sm text-muted">
         No account yet? Re-scans, product import and AI visibility monitoring are part of the paid plans, from CHF{" "}
         {MONITOR_PRICE_CHF}/month —{" "}
-        <Link href="/pricing" className="text-accent">
+        <Link href="/pricing" className="link-underline">
           see pricing
         </Link>
         .

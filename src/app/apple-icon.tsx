@@ -14,7 +14,7 @@ export default function AppleIcon() {
           height: "100%",
           alignItems: "center",
           justifyContent: "center",
-          background: "#07090c",
+          background: "#fbfaf7",
         }}
       >
         <img src={robotHeadDataUri(140)} width={140} height={140} alt="" />

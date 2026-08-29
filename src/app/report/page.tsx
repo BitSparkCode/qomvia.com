@@ -54,11 +54,11 @@ export default async function ReportPage() {
   if (total === 0) {
     return (
       <div className="space-y-4">
-        <h1 className="text-3xl font-semibold tracking-tight">The state of agent commerce</h1>
+        <h1 className="font-serif text-4xl tracking-tight">The state of agent commerce</h1>
         <p className="text-muted">
           The index is still being built. Once stores have been scored, this page publishes the aggregate numbers.
         </p>
-        <Link href="/" className="text-accent">
+        <Link href="/" className="link-underline">
           Scan a store →
         </Link>
       </div>
@@ -69,67 +69,66 @@ export default async function ReportPage() {
 
   return (
     <div className="space-y-12">
-      <header className="space-y-3">
-        <h1 className="text-3xl font-semibold tracking-tight">The state of agent commerce</h1>
-        <p className="max-w-2xl text-muted">
+      <header className="space-y-3 border-b border-rule pb-6">
+        <p className="eyebrow">The Qomvia index · rubric v1</p>
+        <h1 className="font-serif text-4xl tracking-tight sm:text-5xl">The state of agent commerce</h1>
+        <p className="max-w-2xl leading-relaxed text-muted">
           Measured across {total} storefronts with rubric v1. Every number here is reproducible: each store has a public
           page showing the individual measurements behind its score.
         </p>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-3">
+      <section className="grid gap-8 sm:grid-cols-3">
         {[
           { label: "Stores measured", value: `${total}` },
           { label: "Average score", value: `${average}/100`, color: gradeColor(average) },
           { label: "Effectively closed to agents (grade F)", value: `${Math.round((failing / total) * 100)}%` },
         ].map((card) => (
-          <div key={card.label} className="rounded-xl border border-border bg-surface p-5">
-            <div className="text-2xl font-semibold" style={card.color ? { color: card.color } : undefined}>
+          <div key={card.label} className="border-t-2 border-foreground pt-4">
+            <div className="tabular text-3xl" style={card.color ? { color: card.color } : undefined}>
               {card.value}
             </div>
-            <div className="mt-1 text-sm text-muted">{card.label}</div>
+            <div className="mt-1 text-sm leading-relaxed text-muted">{card.label}</div>
           </div>
         ))}
       </section>
 
       {headline ? (
-        <section className="rounded-xl border border-accent bg-accent/5 p-5">
-          <p className="text-lg">
-            <span className="font-semibold">{headline.failShare}%</span> of measured stores fail{" "}
-            <span className="font-semibold">{headline.title.toLowerCase()}</span>.
+        <section className="border-y border-rule bg-raised px-6 py-8">
+          <p className="font-serif text-2xl leading-snug">
+            <span className="tabular">{headline.failShare}%</span> of measured stores fail{" "}
+            {headline.title.toLowerCase()}.
           </p>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-2 text-sm text-muted">
             Based on {headline.measured} stores where the signal could be measured.
           </p>
         </section>
       ) : null}
 
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold">Where stores fail</h2>
-        <ul className="space-y-2">
+        <h2 className="border-b border-rule pb-2 text-2xl">Where stores fail</h2>
+        <ul className="divide-y divide-border">
           {stats
             .filter((stat) => stat.measured > 0)
             .map((stat) => (
-              <li key={stat.id} className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span>{stat.title}</span>
-                  <span className="font-mono text-muted">{stat.failShare}% fail</span>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-border">
-                  <div className="h-full rounded-full bg-bad" style={{ width: `${stat.failShare}%` }} />
-                </div>
+              <li key={stat.id} className="flex items-center gap-4 py-2.5 text-sm">
+                <span className="flex-1">{stat.title}</span>
+                <span className="hidden h-px flex-1 bg-border sm:block">
+                  <span className="block h-px bg-bad" style={{ width: `${stat.failShare}%` }} />
+                </span>
+                <span className="tabular w-16 text-right text-muted">{stat.failShare}%</span>
               </li>
             ))}
         </ul>
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-xl font-semibold">Grade distribution</h2>
-        <ul className="flex flex-wrap gap-4 text-sm">
+        <h2 className="border-b border-rule pb-2 text-2xl">Grade distribution</h2>
+        <ul className="grid grid-cols-5 gap-4 text-sm">
           {grades.map((entry) => (
-            <li key={entry.grade} className="rounded-lg border border-border bg-surface px-4 py-3">
-              <span className="font-mono text-lg">{entry.grade}</span>
-              <span className="ml-2 text-muted">{entry.count} stores</span>
+            <li key={entry.grade} className="border-t border-border pt-3">
+              <span className="font-serif text-2xl">{entry.grade}</span>
+              <span className="tabular mt-1 block text-xs text-muted">{entry.count} stores</span>
             </li>
           ))}
         </ul>

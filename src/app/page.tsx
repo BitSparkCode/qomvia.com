@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { ScanForm } from "@/components/scan-form";
 import { prisma } from "@/lib/db";
-import { gradeColor, SITE_NAME } from "@/lib/site";
-import { DIMENSIONS } from "@/lib/rubric/types";
+import { gradeColor, MONITOR_PRICE_CHF } from "@/lib/site";
 
 export const revalidate = 300;
 
@@ -20,97 +19,127 @@ export default async function HomePage() {
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
   const total = ranked.length;
   const average = total === 0 ? 0 : Math.round(ranked.reduce((sum, scan) => sum + (scan.score ?? 0), 0) / total);
+  const failing = ranked.filter((scan) => (scan.score ?? 0) < 40).length;
+  const failShare = total === 0 ? 0 : Math.round((failing / total) * 100);
 
   return (
-    <div className="space-y-16">
-      <section className="space-y-6">
-        <p className="inline-block rounded-full border border-border bg-surface px-3 py-1 text-xs text-muted">
-          Rubric v1 · 21 measured signals · transparent methodology
-        </p>
-        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-          Can AI agents actually <span className="text-accent">buy</span> from your store?
-        </h1>
-        <p className="max-w-2xl text-lg text-muted">
-          ChatGPT, Copilot and Perplexity are starting to shop on behalf of your customers. {SITE_NAME} measures whether
-          they can reach your catalogue, read your prices and get to checkout — and gives you the exact defects to fix.
-        </p>
-        <ScanForm />
-        {total > 0 ? (
-          <p className="text-sm text-muted">
-            {total} storefronts scored so far · average score{" "}
-            <span style={{ color: gradeColor(average) }} className="font-semibold">
-              {average}/100
-            </span>
+    <div className="space-y-20">
+      <section className="grid gap-10 lg:grid-cols-[1.35fr_1fr] lg:gap-16">
+        <div className="space-y-6">
+          <p className="eyebrow">Free score · no signup · 21 measured signals</p>
+          <h1 className="font-serif text-[2.6rem] leading-[1.08] tracking-tight sm:text-[3.4rem]">
+            When ChatGPT recommends a shop, is it <em className="italic">yours</em>?
+          </h1>
+          <p className="max-w-xl text-[1.0625rem] leading-relaxed text-muted">
+            Enter your domain. We measure whether AI assistants can read your catalogue and reach your checkout — and
+            show you which shops they name instead of you.
           </p>
+          <ScanForm />
+        </div>
+
+        {total > 0 ? (
+          <aside className="self-start border-t-2 border-foreground pt-5">
+            <p className="eyebrow">Measured so far</p>
+            <dl className="mt-4 divide-y divide-border">
+              <div className="flex items-baseline justify-between py-3">
+                <dt className="text-sm text-muted">Storefronts</dt>
+                <dd className="tabular text-2xl">{total}</dd>
+              </div>
+              <div className="flex items-baseline justify-between py-3">
+                <dt className="text-sm text-muted">Average score</dt>
+                <dd className="tabular text-2xl" style={{ color: gradeColor(average) }}>
+                  {average}
+                  <span className="text-sm text-muted">/100</span>
+                </dd>
+              </div>
+              <div className="flex items-baseline justify-between py-3">
+                <dt className="text-sm text-muted">Graded F</dt>
+                <dd className="tabular text-2xl text-bad">{failShare}%</dd>
+              </div>
+            </dl>
+            <Link href="/report" className="link-underline mt-4 inline-block text-sm">
+              Read the index
+            </Link>
+          </aside>
         ) : null}
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-3">
-        {Object.entries(DIMENSIONS).map(([id, dimension]) => (
-          <div key={id} className="rounded-xl border border-border bg-surface p-4">
-            <div className="font-mono text-xs text-muted">{dimension.max} pts</div>
-            <div className="mt-1 font-medium">{dimension.label}</div>
-          </div>
-        ))}
+      <section className="space-y-5">
+        <div className="border-b border-rule pb-2">
+          <h2 className="text-2xl">What you get</h2>
+        </div>
+        <div className="grid gap-10 sm:grid-cols-3">
+          {[
+            {
+              kicker: "Free",
+              title: "Your readiness score",
+              body: "Which of your product, price and checkout signals AI agents can actually use — plus a shareable badge.",
+              href: "/methodology",
+              cta: "See the rubric",
+            },
+            {
+              kicker: `From CHF ${MONITOR_PRICE_CHF} / month`,
+              title: "Product-level visibility",
+              body: "We ask ChatGPT and Perplexity real buying questions about your products, per market, and count how often you are named and linked.",
+              href: "/pricing",
+              cta: "See plans",
+            },
+            {
+              kicker: "Included",
+              title: "Competitors and fixes",
+              body: "Who wins the answers you lose, and the specific catalogue changes that would put you in them.",
+              href: "/pricing",
+              cta: "See plans",
+            },
+          ].map((card) => (
+            <article key={card.title} className="flex flex-col border-t-2 border-foreground pt-4">
+              <p className="eyebrow">{card.kicker}</p>
+              <h3 className="mt-1 text-xl">{card.title}</h3>
+              <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">{card.body}</p>
+              <Link href={card.href} className="link-underline mt-4 text-sm">
+                {card.cta}
+              </Link>
+            </article>
+          ))}
+        </div>
       </section>
 
       {ranked.length > 0 ? (
-        <section className="space-y-4">
-          <div className="flex items-baseline justify-between">
-            <h2 className="text-xl font-semibold">Most agent-ready right now</h2>
-            <Link href="/leaderboard" className="text-sm text-accent">
-              Full leaderboard →
+        <section className="space-y-5">
+          <div className="flex items-baseline justify-between border-b border-rule pb-2">
+            <h2 className="text-2xl">Most agent-ready right now</h2>
+            <Link href="/leaderboard" className="link-underline text-sm">
+              Full leaderboard
             </Link>
           </div>
-          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
-            {ranked.slice(0, 8).map((scan, index) => (
-              <li key={scan.id} className="flex items-center justify-between px-4 py-3">
-                <span className="flex items-center gap-3">
-                  <span className="w-5 font-mono text-xs text-muted">{index + 1}</span>
-                  <Link href={`/site/${scan.brand.slug}`} className="hover:text-accent">
-                    {scan.brand.name}
-                  </Link>
-                  <span className="text-xs text-muted">{scan.brand.domain}</span>
-                </span>
-                <span className="font-mono font-semibold" style={{ color: gradeColor(scan.score ?? 0) }}>
-                  {scan.score}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left">
+                <th className="eyebrow w-10 py-2 font-normal">#</th>
+                <th className="eyebrow py-2 font-normal">Store</th>
+                <th className="eyebrow hidden py-2 font-normal sm:table-cell">Domain</th>
+                <th className="eyebrow py-2 text-right font-normal">Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ranked.slice(0, 10).map((scan, index) => (
+                <tr key={scan.id} className="border-b border-border last:border-0">
+                  <td className="tabular py-2.5 text-xs text-muted">{String(index + 1).padStart(2, "0")}</td>
+                  <td className="py-2.5">
+                    <Link href={`/site/${scan.brand.slug}`} className="link-underline">
+                      {scan.brand.name}
+                    </Link>
+                  </td>
+                  <td className="hidden py-2.5 text-muted sm:table-cell">{scan.brand.domain}</td>
+                  <td className="tabular py-2.5 text-right" style={{ color: gradeColor(scan.score ?? 0) }}>
+                    {scan.score}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </section>
       ) : null}
-
-      <section className="grid gap-6 sm:grid-cols-3">
-        {[
-          {
-            title: "Free public score",
-            body: "A shareable page with sub-scores, the exact failing signals and an embeddable badge.",
-            href: "/methodology",
-            cta: "See the rubric",
-          },
-          {
-            title: "Deep audit — CHF 99",
-            body: "Up to 500 URLs, platform-specific fixes, competitor comparison and a PDF for your stakeholders.",
-            href: "/pricing",
-            cta: "See what you get",
-          },
-          {
-            title: "Monitoring — CHF 29/mo",
-            body: "Weekly re-scan, alerts when a change breaks agent access, badge kept up to date.",
-            href: "/pricing",
-            cta: "Start monitoring",
-          },
-        ].map((card) => (
-          <div key={card.title} className="flex flex-col rounded-xl border border-border bg-surface p-5">
-            <h3 className="font-semibold">{card.title}</h3>
-            <p className="mt-2 flex-1 text-sm text-muted">{card.body}</p>
-            <Link href={card.href} className="mt-4 text-sm text-accent">
-              {card.cta} →
-            </Link>
-          </div>
-        ))}
-      </section>
     </div>
   );
 }

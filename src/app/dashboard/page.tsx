@@ -1,13 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ImportForm, LogoutButton, RescanButton, VisibilityRunButton } from "@/components/dashboard-actions";
+import {
+  ImportForm,
+  LogoutButton,
+  RescanButton,
+  VisibilityRunButton,
+  Watchlist,
+} from "@/components/dashboard-actions";
+import { CheckoutButton } from "@/components/checkout-button";
 import { StatusIcon, verdictFromStatus } from "@/components/score";
 import { currentUser, entitlement } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { SIGNALS } from "@/lib/rubric/signals";
-import { VISIBILITY_PLANS } from "@/lib/visibility/plans";
-import { latestRun, runHistory } from "@/lib/visibility/run";
+import { creditBalance } from "@/lib/visibility/credits";
+import { CREDIT_PACKS, VISIBILITY_PLANS } from "@/lib/visibility/plans";
+import type { Recommendation } from "@/lib/visibility/recommend";
+import { latestRun, runHistory, topCompetitors } from "@/lib/visibility/run";
 
 export const dynamic = "force-dynamic";
 
@@ -41,10 +50,17 @@ export default async function DashboardPage() {
         orderBy: { createdAt: "desc" },
         include: { signals: true },
       });
-      const products = await prisma.product.count({ where: { brandId: membership.brandId } });
+      const products = await prisma.product.findMany({
+        where: { brandId: membership.brandId },
+        orderBy: [{ tracked: "desc" }, { priceCents: "desc" }],
+        take: 300,
+        select: { id: true, title: true, priceCents: true, currency: true, tracked: true },
+      });
       const run = await latestRun(membership.brandId);
       const history = await runHistory(membership.brandId, 8);
-      return { brand: membership.brand, access, scan, products, run, history };
+      const competitors = await topCompetitors(membership.brandId, 8);
+      const credits = await creditBalance(membership.brandId);
+      return { brand: membership.brand, access, scan, products, run, history, competitors, credits };
     }),
   );
 
@@ -54,14 +70,14 @@ export default async function DashboardPage() {
     <div className="space-y-10">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Your stores</h1>
+          <h1 className="font-serif text-4xl tracking-tight">Your stores</h1>
           <p className="text-muted">{user.email}</p>
         </div>
         <LogoutButton />
       </header>
 
       {stores.length === 0 ? (
-        <div className="rounded-xl border border-border bg-surface p-6">
+        <div className="border border-border bg-surface p-6">
           <h2 className="font-semibold">No store attached yet</h2>
           <p className="mt-2 text-sm text-muted">
             Stores are attached automatically to the email you paid with. If you used a different address, buy a plan
@@ -73,17 +89,19 @@ export default async function DashboardPage() {
         </div>
       ) : null}
 
-      {stores.map(({ brand, access, scan, products, run, history }) => {
+      {stores.map(({ brand, access, scan, products, run, history, competitors, credits }) => {
         const premium = access?.premium ?? false;
         const plan = access && access.tier !== "AUDIT" && access.tier !== "NONE" ? VISIBILITY_PLANS[access.tier] : null;
         const failing = scan?.signals.filter((signal) => signal.status !== "pass") ?? [];
         const shareOfVoice = ((run?.shareOfVoice as unknown as ShareOfVoiceEntry[]) ?? []).slice(0, 6);
+        const recommendations = ((run?.recommendations as unknown as Recommendation[]) ?? []).slice(0, 6);
+        const creditsPerProduct = (plan?.providers.length ?? 1) * (plan?.locales ?? 1);
 
         return (
-          <section key={brand.id} className="space-y-6 rounded-xl border border-border bg-surface p-6">
+          <section key={brand.id} className="space-y-6 border border-border bg-surface p-6">
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <div>
-                <h2 className="text-xl font-semibold">{brand.name}</h2>
+                <h2 className="border-b border-rule pb-2 text-2xl">{brand.name}</h2>
                 <p className="text-sm text-muted">
                   {brand.domain} ·{" "}
                   {scan
@@ -95,7 +113,7 @@ export default async function DashboardPage() {
               </div>
               <div className="text-right text-sm text-muted">
                 <p>{premium ? `Plan: ${access?.tier}` : "No active plan"}</p>
-                <Link href={`/site/${brand.slug}`} className="text-accent">
+                <Link href={`/site/${brand.slug}`} className="link-underline">
                   Public score page →
                 </Link>
               </div>
@@ -124,14 +142,38 @@ export default async function DashboardPage() {
 
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">Catalogue</h3>
-                <p className="text-sm text-muted">{products} products imported.</p>
+                <p className="text-sm text-muted">
+                  {products.length} products imported · {products.filter((product) => product.tracked).length} tracked ·{" "}
+                  {credits} credits left
+                </p>
                 {premium ? (
-                  <ImportForm brandId={brand.id} domain={brand.domain} />
+                  <>
+                    <ImportForm brandId={brand.id} domain={brand.domain} />
+                    <div className="flex flex-wrap items-center gap-3 pt-1">
+                      {CREDIT_PACKS.map((pack) => (
+                        <CheckoutButton
+                          key={pack.credits}
+                          domain={brand.domain}
+                          product={pack.credits === CREDIT_PACKS[0].credits ? "pack_1000" : "pack_5000"}
+                          label={`Top up ${pack.credits} credits — CHF ${pack.priceChf}`}
+                        />
+                      ))}
+                    </div>
+                  </>
                 ) : (
                   <p className="text-sm text-muted">Product import is part of the paid plans.</p>
                 )}
               </div>
             </div>
+
+            {premium && products.length > 0 ? (
+              <div className="space-y-3 border-t border-border pt-6">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">
+                  Which products we ask about
+                </h3>
+                <Watchlist brandId={brand.id} products={products} creditsPerProduct={creditsPerProduct} />
+              </div>
+            ) : null}
 
             <div className="space-y-4 border-t border-border pt-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -167,9 +209,55 @@ export default async function DashboardPage() {
                     </div>
                   </dl>
 
+                  {recommendations.length > 0 ? (
+                    <div>
+                      <h4 className="text-sm font-semibold">What to change</h4>
+                      <ol className="mt-2 space-y-3 text-sm">
+                        {recommendations.map((recommendation) => (
+                          <li key={recommendation.title} className="border-l-2 border-border pl-3">
+                            <p className="font-medium">
+                              {recommendation.title}{" "}
+                              <span className="text-xs uppercase tracking-wide text-muted">
+                                {recommendation.impact}
+                              </span>
+                            </p>
+                            <p className="text-muted">{recommendation.detail}</p>
+                            {recommendation.evidence.length > 0 ? (
+                              <p className="mt-1 text-xs text-muted">{recommendation.evidence.join(" · ")}</p>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  ) : null}
+
+                  {competitors.length > 0 ? (
+                    <div>
+                      <h4 className="text-sm font-semibold">Competitors in your answers</h4>
+                      <table className="mt-2 w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
+                            <th className="py-1 font-normal">Shop</th>
+                            <th className="py-1 text-right font-normal">Named</th>
+                            <th className="py-1 text-right font-normal">You absent</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {competitors.map((competitor) => (
+                            <tr key={competitor.name} className="border-b border-border last:border-0">
+                              <td className="py-1.5">{competitor.domain ?? competitor.name}</td>
+                              <td className="tabular py-1.5 text-right">{competitor.mentions}</td>
+                              <td className="tabular py-1.5 text-right">{competitor.wins}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : null}
+
                   {shareOfVoice.length > 0 ? (
                     <div>
-                      <h4 className="text-sm font-semibold">Who the models name instead</h4>
+                      <h4 className="text-sm font-semibold">Share of voice</h4>
                       <ul className="mt-2 space-y-1 text-sm text-muted">
                         {shareOfVoice.map((entry) => (
                           <li key={entry.host} className="flex justify-between gap-4">

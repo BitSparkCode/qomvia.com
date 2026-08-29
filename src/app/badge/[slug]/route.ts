@@ -10,11 +10,11 @@ function escapeXml(value: string): string {
 
 function svg(label: string, score: string, color: string): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="40" role="img" aria-label="${escapeXml(label)} ${escapeXml(score)}">
-  <rect width="200" height="40" rx="6" fill="#0e1218"/>
-  <rect x="0.5" y="0.5" width="199" height="39" rx="5.5" fill="none" stroke="#1e2632"/>
+  <rect width="200" height="40" fill="#fbfaf7"/>
+  <rect x="0.5" y="0.5" width="199" height="39" fill="none" stroke="#cfc9bb"/>
   <g transform="translate(9 8) scale(0.75)">${robotHeadInner()}</g>
-  <text x="36" y="17" font-family="ui-sans-serif,system-ui,sans-serif" font-size="9" fill="#8d9bad" letter-spacing="0.8">QOMVIA · AGENT-READY</text>
-  <text x="36" y="32" font-family="ui-sans-serif,system-ui,sans-serif" font-size="13" fill="#e8edf4">${escapeXml(label)}</text>
+  <text x="36" y="17" font-family="ui-sans-serif,system-ui,sans-serif" font-size="9" fill="#6a675f" letter-spacing="0.8">QOMVIA · AGENT-READY</text>
+  <text x="36" y="32" font-family="ui-sans-serif,system-ui,sans-serif" font-size="13" fill="#17181b">${escapeXml(label)}</text>
   <text x="188" y="27" text-anchor="end" font-family="ui-sans-serif,system-ui,sans-serif" font-size="20" font-weight="700" fill="${color}">${escapeXml(score)}</text>
 </svg>`;
 }
@@ -33,7 +33,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
   const body =
     brand && scan && !brand.optedOut && scan.score != null
       ? svg(brand.domain, `${scan.score}`, gradeColor(scan.score))
-      : svg("not scored", "—", "#8d9bad");
+      : svg("not scored", "—", "#6a675f");
 
   return new Response(body, {
     headers: {

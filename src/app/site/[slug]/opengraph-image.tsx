@@ -29,13 +29,13 @@ export default async function Image({ params }: { params: Promise<{ slug: string
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          background: "#07090c",
-          color: "#e8edf4",
+          background: "#fbfaf7",
+          color: "#17181b",
           padding: 72,
           fontFamily: "sans-serif",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 30, color: "#8d9bad" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 30, color: "#6a675f" }}>
           <img src={robotHeadDataUri(44)} width={44} height={44} alt="" />
           {SITE_NAME} · agent-readiness score
         </div>
@@ -45,13 +45,13 @@ export default async function Image({ params }: { params: Promise<{ slug: string
           </div>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 24 }}>
             <span style={{ fontSize: 180, fontWeight: 800, color, lineHeight: 1 }}>{scan ? score : "—"}</span>
-            <span style={{ fontSize: 48, color: "#8d9bad", paddingBottom: 24 }}>/100</span>
+            <span style={{ fontSize: 48, color: "#6a675f", paddingBottom: 24 }}>/100</span>
             {scan?.grade ? (
               <span style={{ fontSize: 48, color, paddingBottom: 24 }}>grade {scan.grade}</span>
             ) : null}
           </div>
         </div>
-        <div style={{ display: "flex", fontSize: 28, color: "#8d9bad" }}>
+        <div style={{ display: "flex", fontSize: 28, color: "#6a675f" }}>
           Can AI agents read your catalogue and reach checkout?
         </div>
       </div>

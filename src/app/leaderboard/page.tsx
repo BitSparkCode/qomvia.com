@@ -29,9 +29,10 @@ export default async function LeaderboardPage() {
 
   return (
     <div className="space-y-8">
-      <header className="space-y-3">
-        <h1 className="text-3xl font-semibold tracking-tight">Agent-readiness leaderboard</h1>
-        <p className="max-w-2xl text-muted">
+      <header className="space-y-3 border-b border-rule pb-6">
+        <p className="eyebrow">Ranked by measured score</p>
+        <h1 className="font-serif text-4xl tracking-tight">Agent-readiness leaderboard</h1>
+        <p className="max-w-2xl leading-relaxed text-muted">
           Every score is computed from public HTTP responses with rubric v1. Anyone can re-scan a store, and every
           failing signal is shown with the measurement behind it.
         </p>
@@ -43,36 +44,36 @@ export default async function LeaderboardPage() {
       {ranked.length === 0 ? (
         <p className="text-muted">
           No public scores yet.{" "}
-          <Link href="/" className="text-accent">
+          <Link href="/" className="link-underline">
             Scan the first store →
           </Link>
         </p>
       ) : (
         <table className="w-full text-sm">
-          <thead className="text-left text-xs uppercase tracking-wide text-muted">
-            <tr>
-              <th className="py-2">#</th>
-              <th className="py-2">Store</th>
-              <th className="py-2">Platform</th>
-              <th className="py-2 text-right">Score</th>
-              <th className="py-2 text-right">Grade</th>
+          <thead>
+            <tr className="border-b border-foreground text-left">
+              <th className="eyebrow w-10 py-2 font-normal">#</th>
+              <th className="eyebrow py-2 font-normal">Store</th>
+              <th className="eyebrow hidden py-2 font-normal sm:table-cell">Platform</th>
+              <th className="eyebrow py-2 text-right font-normal">Score</th>
+              <th className="eyebrow py-2 text-right font-normal">Grade</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
             {ranked.map((scan, index) => (
               <tr key={scan.id}>
-                <td className="py-2 font-mono text-xs text-muted">{index + 1}</td>
-                <td className="py-2">
-                  <Link href={`/site/${scan.brand.slug}`} className="hover:text-accent">
+                <td className="tabular py-2.5 text-xs text-muted">{String(index + 1).padStart(2, "0")}</td>
+                <td className="py-2.5">
+                  <Link href={`/site/${scan.brand.slug}`} className="link-underline">
                     {scan.brand.name}
                   </Link>
                   <span className="ml-2 text-xs text-muted">{scan.brand.domain}</span>
                 </td>
-                <td className="py-2 text-muted">{scan.brand.platform ?? "—"}</td>
-                <td className="py-2 text-right font-mono" style={{ color: gradeColor(scan.score ?? 0) }}>
+                <td className="hidden py-2.5 text-muted sm:table-cell">{scan.brand.platform ?? "—"}</td>
+                <td className="tabular py-2.5 text-right" style={{ color: gradeColor(scan.score ?? 0) }}>
                   {scan.score}
                 </td>
-                <td className="py-2 text-right font-mono text-muted">{scan.grade}</td>
+                <td className="tabular py-2.5 text-right text-muted">{scan.grade}</td>
               </tr>
             ))}
           </tbody>

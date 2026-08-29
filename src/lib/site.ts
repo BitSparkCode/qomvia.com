@@ -12,13 +12,12 @@ export function absoluteUrl(path: string): string {
   return `${siteUrl()}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-export const DEEP_AUDIT_PRICE_CHF = 99;
 export const MONITOR_PRICE_CHF = 29;
 export const AGENCY_PRICE_CHF = 149;
 
 export function gradeColor(score: number): string {
-  if (score >= 75) return "#38e08a";
-  if (score >= 60) return "#9ade5a";
-  if (score >= 40) return "#ffcc4d";
-  return "#ff6b6b";
+  if (score >= 75) return "#1d4d3e";
+  if (score >= 60) return "#4a6b2f";
+  if (score >= 40) return "#8a6316";
+  return "#9a2b2b";
 }

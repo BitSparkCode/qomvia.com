@@ -95,6 +95,43 @@ export async function importProductsAction(_state: FormState, formData: FormData
   }
 }
 
+export async function trackProductsAction(_state: FormState, formData: FormData): Promise<FormState> {
+  const brandId = String(formData.get("brandId") ?? "");
+  const guard = await requirePremium(brandId);
+  if ("error" in guard) return { error: guard.error };
+
+  const selected = formData.getAll("productId").map(String);
+  const mode = String(formData.get("mode") ?? "selection");
+
+  if (mode === "topByPrice") {
+    const top = await prisma.product.findMany({
+      where: { brandId },
+      orderBy: { priceCents: "desc" },
+      take: 50,
+      select: { id: true },
+    });
+    await prisma.product.updateMany({ where: { brandId }, data: { tracked: false } });
+    await prisma.product.updateMany({
+      where: { brandId, id: { in: top.map((product) => product.id) } },
+      data: { tracked: true },
+    });
+    revalidatePath("/dashboard");
+    return { ok: `Tracking the ${top.length} highest-priced products.` };
+  }
+
+  await prisma.product.updateMany({ where: { brandId }, data: { tracked: false } });
+  if (selected.length > 0) {
+    await prisma.product.updateMany({ where: { brandId, id: { in: selected } }, data: { tracked: true } });
+  }
+  revalidatePath("/dashboard");
+  return {
+    ok:
+      selected.length === 0
+        ? "No products selected — runs fall back to the whole catalogue."
+        : `Tracking ${selected.length} products.`,
+  };
+}
+
 export async function runVisibilityAction(_state: FormState, formData: FormData): Promise<FormState> {
   const brandId = String(formData.get("brandId") ?? "");
   const guard = await requirePremium(brandId);

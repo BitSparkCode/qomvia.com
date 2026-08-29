@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function OptOutPage() {
   return (
     <div className="max-w-xl space-y-6">
-      <h1 className="text-3xl font-semibold tracking-tight">Opt out</h1>
+      <h1 className="font-serif text-4xl tracking-tight">Opt out</h1>
       <p className="text-muted">
         Enter the domain and an email address at that domain. We remove the public page, stop future scans and keep the
         domain on the exclusion list.
