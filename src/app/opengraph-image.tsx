@@ -17,8 +17,8 @@ export default function Image() {
           flexDirection: "column",
           justifyContent: "center",
           gap: 32,
-          background: "#07090c",
-          color: "#e8edf4",
+          background: "#fbfaf7",
+          color: "#17181b",
           padding: 90,
           fontFamily: "sans-serif",
         }}
@@ -27,8 +27,8 @@ export default function Image() {
           <img src={robotHeadDataUri(96)} width={96} height={96} alt="" />
           <span style={{ fontSize: 76, fontWeight: 800, letterSpacing: -1 }}>{SITE_NAME}</span>
         </div>
-        <div style={{ display: "flex", fontSize: 52, color: "#38e08a", lineHeight: 1.2 }}>{SITE_TAGLINE}</div>
-        <div style={{ display: "flex", fontSize: 30, color: "#8d9bad" }}>
+        <div style={{ display: "flex", fontSize: 52, color: "#1d4d3e", lineHeight: 1.2 }}>{SITE_TAGLINE}</div>
+        <div style={{ display: "flex", fontSize: 30, color: "#6a675f" }}>
           A transparent 100-point score measured from public HTTP responses.
         </div>
       </div>

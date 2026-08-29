@@ -28,6 +28,8 @@ model Brand {
   prompts     VisibilityPrompt[]
   visibilityRuns VisibilityRun[]
   members     BrandMember[]
+  credits     CreditEntry[]
+  competitors Competitor[]
 
   @@index([country])
   @@index([industry])
@@ -135,12 +137,15 @@ model Product {
   url         String?
   imageUrl    String?
   source      String
+  /// Only tracked products consume credits in a visibility run.
+  tracked     Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   prompts     VisibilityPrompt[]
 
   @@unique([brandId, externalId])
   @@index([brandId])
+  @@index([brandId, tracked])
 }
 
 model ProductImport {
@@ -169,11 +174,13 @@ model VisibilityPrompt {
   intent    String
   locale    String   @default("de-CH")
   active    Boolean  @default(true)
+  /// Drives run rotation, so successive runs cover the whole catalogue.
+  lastRunAt DateTime?
   createdAt DateTime @default(now())
   results   VisibilityResult[]
 
-  @@unique([brandId, text])
-  @@index([brandId, active])
+  @@unique([brandId, locale, text])
+  @@index([brandId, active, lastRunAt])
 }
 
 model VisibilityRun {
@@ -189,6 +196,10 @@ model VisibilityRun {
   citationRate Float?
   avgRank      Float?
   shareOfVoice Json?
+  recommendations Json?
+  locales      String[]
+  productsCovered Int    @default(0)
+  creditsUsed  Int       @default(0)
   costCents    Int       @default(0)
   error        String?
   createdAt    DateTime  @default(now())
@@ -265,6 +276,57 @@ model LoginToken {
   createdAt DateTime  @default(now())
 
   @@index([email, createdAt])
+}
+
+/// A retailer the models named in an answer. Aggregated per customer shop, so
+/// the dashboard can show who wins each phrase — and so shops that beat a
+/// customer without being customers themselves become an outreach list.
+model Competitor {
+  id          String   @id @default(cuid())
+  brand       Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId     String
+  name        String
+  domain      String?
+  /// Answers this retailer was named in.
+  mentions    Int      @default(0)
+  /// Answers where it was named and the customer was not.
+  wins        Int      @default(0)
+  bestRank    Int?
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  @@unique([brandId, name])
+  @@index([brandId, mentions])
+}
+
+/// A provider answer reused across shops within its TTL: identical phrases in the
+/// same model and locale are billed to tokens once, not once per customer.
+model AnswerCache {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  provider  String
+  model     String
+  locale    String
+  prompt    String
+  answer    String
+  citations String[]
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+/// Prepaid visibility credits. One credit buys one tracked product asked to one
+/// model in one locale; the ledger is append-only so margin stays auditable.
+model CreditEntry {
+  id        String   @id @default(cuid())
+  brand     Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  brandId   String
+  delta     Int
+  reason    String
+  runId     String?
+  createdAt DateTime @default(now())
+
+  @@index([brandId, createdAt])
 }
 
 model Alert {

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function BotPage() {
   return (
     <div className="max-w-2xl space-y-6">
-      <h1 className="text-3xl font-semibold tracking-tight">QomviaBot</h1>
+      <h1 className="font-serif text-4xl tracking-tight">QomviaBot</h1>
       <p className="text-muted">
         QomviaBot is the crawler behind {SITE_NAME}. It measures whether AI shopping agents can read and transact
         against a storefront, and publishes the result on a public score page.
@@ -20,7 +20,7 @@ export default function BotPage() {
 
       <section className="space-y-2">
         <h2 className="font-semibold">User agent</h2>
-        <pre className="overflow-x-auto rounded-lg border border-border bg-surface p-3 text-xs">
+        <pre className="overflow-x-auto border border-border bg-surface p-3 text-xs">
           <code>QomviaBot/1.0 (+https://qomvia.com/bot; readiness measurement; respects robots.txt)</code>
         </pre>
       </section>
@@ -48,12 +48,12 @@ export default function BotPage() {
       <section className="space-y-2">
         <h2 className="font-semibold">How to control it</h2>
         <p className="text-sm text-muted">Slow it down or block it in robots.txt:</p>
-        <pre className="overflow-x-auto rounded-lg border border-border bg-surface p-3 text-xs">
+        <pre className="overflow-x-auto border border-border bg-surface p-3 text-xs">
           <code>{`User-agent: QomviaBot\nCrawl-delay: 10\nDisallow: /checkout`}</code>
         </pre>
         <p className="text-sm text-muted">
           To remove an existing public score page as well, use the{" "}
-          <Link href="/opt-out" className="text-accent">
+          <Link href="/opt-out" className="link-underline">
             opt-out form
           </Link>
           . Questions: bot@qomvia.com.

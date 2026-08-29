@@ -10,7 +10,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-lg bg-accent px-5 py-3 font-semibold text-black transition disabled:opacity-60"
+      className="btn"
     >
       {pending ? "Scanning…" : "Check my store"}
     </button>
@@ -27,7 +27,7 @@ export function ScanForm({ defaultValue = "" }: { defaultValue?: string }) {
           defaultValue={defaultValue}
           placeholder="yourstore.com"
           autoComplete="url"
-          className="flex-1 rounded-lg border border-border bg-surface px-4 py-3 outline-none placeholder:text-muted focus:border-accent"
+          className="input flex-1"
         />
         <SubmitButton />
       </div>

@@ -41,10 +41,8 @@ ${Object.entries(DIMENSIONS)
 ${ranked.map((scan) => `- ${scan.brand.domain}: ${scan.score}/100 (${scan.grade}) — ${absoluteUrl(`/site/${scan.brand.slug}`)}`).join("\n") || "- none yet"}
 
 ## Commercial
-- Deep audit (500 URLs, prioritised fixes): CHF 99 one-off
-- Monitoring (weekly re-scan, alerts): CHF 29/month
-- Agency (25 domains, API, white-label): CHF 149/month
-- Enablement (hosted feed, structured data, agentic checkout): from CHF 1500
+- Monitoring (weekly readiness re-scan + product-level LLM visibility, one shop): CHF 29/month
+- Agency (25 shops, daily refresh, all four models, white-label): CHF 149/month
 - Pricing: ${absoluteUrl("/pricing")}
 `;
 

@@ -1,35 +1,41 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
 import { normalizeDomain } from "@/lib/http";
 import { upsertBrand } from "@/lib/scan-service";
 import { stripe, stripeConfigured } from "@/lib/stripe";
-import { absoluteUrl, AGENCY_PRICE_CHF, DEEP_AUDIT_PRICE_CHF, MONITOR_PRICE_CHF } from "@/lib/site";
+import { absoluteUrl, AGENCY_PRICE_CHF, MONITOR_PRICE_CHF } from "@/lib/site";
+import { CREDIT_PACKS } from "@/lib/visibility/plans";
 
 const schema = z.object({
   domain: z.string().min(3),
-  product: z.enum(["deep_audit", "monitor", "agency"]).default("deep_audit"),
+  product: z.enum(["monitor", "agency", "pack_1000", "pack_5000"]).default("monitor"),
   email: z.string().email().optional(),
 });
 
 const PRODUCTS = {
-  deep_audit: {
-    name: "Qomvia deep audit",
-    description: "500-URL agent-readiness audit with prioritised fixes and PDF report",
-    amount: DEEP_AUDIT_PRICE_CHF * 100,
-    mode: "payment" as const,
-  },
   monitor: {
-    name: "Qomvia monitoring",
-    description: "Weekly re-scan, change alerts and a live badge for one domain",
+    name: "Qomvia visibility monitoring",
+    description: "Weekly product-level LLM visibility scan, agent-readiness re-scan and change alerts for one domain",
     amount: MONITOR_PRICE_CHF * 100,
     mode: "subscription" as const,
   },
   agency: {
     name: "Qomvia agency plan",
-    description: "25 domains, competitor tracking, API access and white-label reports",
+    description: "25 domains, daily refresh, all four model providers, competitor tracking and white-label reports",
     amount: AGENCY_PRICE_CHF * 100,
     mode: "subscription" as const,
+  },
+  pack_1000: {
+    name: `Qomvia ${CREDIT_PACKS[0].credits} credit pack`,
+    description: "One credit asks one question to one model in one market",
+    amount: CREDIT_PACKS[0].priceChf * 100,
+    mode: "payment" as const,
+  },
+  pack_5000: {
+    name: `Qomvia ${CREDIT_PACKS[1].credits} credit pack`,
+    description: "One credit asks one question to one model in one market",
+    amount: CREDIT_PACKS[1].priceChf * 100,
+    mode: "payment" as const,
   },
 };
 
@@ -71,21 +77,13 @@ export async function POST(request: Request) {
         },
       },
     ],
-    success_url: absoluteUrl(`/site/${brand.slug}/report?session_id={CHECKOUT_SESSION_ID}`),
+    success_url:
+      product.mode === "payment"
+        ? absoluteUrl("/dashboard")
+        : absoluteUrl(`/site/${brand.slug}/report?session_id={CHECKOUT_SESSION_ID}`),
     cancel_url: absoluteUrl(`/site/${brand.slug}?purchase=cancelled`),
     allow_promotion_codes: true,
   });
-
-  if (parsed.data.product === "deep_audit") {
-    await prisma.auditOrder.create({
-      data: {
-        brandId: brand.id,
-        email: parsed.data.email,
-        amountCents: product.amount,
-        stripeSessionId: session.id,
-      },
-    });
-  }
 
   return NextResponse.json({ url: session.url });
 }

@@ -55,7 +55,7 @@ export default async function ComparePage({ params }: { params: Promise<{ pair: 
   return (
     <div className="space-y-10">
       <header className="space-y-3">
-        <h1 className="text-3xl font-semibold tracking-tight">
+        <h1 className="font-serif text-4xl tracking-tight">
           {left.brand.name} vs {right.brand.name}
         </h1>
         <p className="text-muted">
@@ -65,7 +65,7 @@ export default async function ComparePage({ params }: { params: Promise<{ pair: 
 
       <div className="grid gap-6 sm:grid-cols-2">
         {[left, right].map((entry) => (
-          <div key={entry.brand.id} className="space-y-5 rounded-xl border border-border bg-surface p-5">
+          <div key={entry.brand.id} className="space-y-5 panel p-5">
             <div className="flex items-center gap-4">
               <ScoreDial score={entry.scan.score ?? 0} grade={entry.scan.grade ?? "F"} size={104} />
               <div>

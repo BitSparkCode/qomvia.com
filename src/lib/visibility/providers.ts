@@ -41,7 +41,7 @@ function apiKey(provider: ProviderId): string | undefined {
   return process.env[PROVIDER_CONFIG[provider].envKey];
 }
 
-function model(provider: ProviderId): string {
+export function activeModel(provider: ProviderId): string {
   return process.env[`${PROVIDER_CONFIG[provider].envKey.replace("_API_KEY", "")}_MODEL`] ?? PROVIDER_CONFIG[provider].defaultModel;
 }
 
@@ -95,7 +95,7 @@ const SYSTEM_PROMPT =
  */
 export async function askProvider(provider: ProviderId, prompt: string): Promise<ProviderAnswer> {
   const key = apiKey(provider);
-  const usedModel = model(provider);
+  const usedModel = activeModel(provider);
   const base: ProviderAnswer = { provider, model: usedModel, text: "", citations: [] };
   if (!key) return { ...base, error: `${PROVIDER_CONFIG[provider].envKey} is not configured` };
 

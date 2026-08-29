@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { aggregateRun, analyzeAnswer, registrableHost } from "@/lib/visibility/analyze";
-import { generatePrompts, topCategories } from "@/lib/visibility/prompts";
+import { generatePrompts, localesForCountry, topCategories } from "@/lib/visibility/prompts";
 import { extractUrls } from "@/lib/visibility/providers";
-import { AUDIT_PLAN, VISIBILITY_PLANS } from "@/lib/visibility/plans";
+import { SAMPLE_PLAN, VISIBILITY_PLANS, creditsForRun } from "@/lib/visibility/plans";
 
 const brand = { name: "Transa", domain: "transa.ch" };
 
@@ -92,7 +92,7 @@ describe("prompt generation", () => {
 
   it("stays inside the prompt budget and never repeats a phrase", () => {
     const prompts = generatePrompts(
-      { brandName: "Testbrand", domain: "test.ch", locale: "de-CH", products },
+      { brandName: "Testbrand", domain: "test.ch", locales: ["de-CH"], products },
       7,
     );
     expect(prompts.length).toBeLessThanOrEqual(7);
@@ -101,7 +101,7 @@ describe("prompt generation", () => {
   });
 
   it("produces nothing for an empty budget", () => {
-    expect(generatePrompts({ brandName: "T", domain: "t.ch", locale: "de-CH", products }, 0)).toEqual([]);
+    expect(generatePrompts({ brandName: "T", domain: "t.ch", locales: ["de-CH"], products }, 0)).toEqual([]);
   });
 });
 
@@ -121,6 +121,43 @@ describe("plans", () => {
   it("keeps provider spend bounded per tier", () => {
     expect(VISIBILITY_PLANS.MONITOR.promptBudget).toBeLessThan(VISIBILITY_PLANS.AGENCY.promptBudget);
     expect(VISIBILITY_PLANS.MONITOR.refreshDays).toBeGreaterThanOrEqual(VISIBILITY_PLANS.AGENCY.refreshDays);
-    expect(AUDIT_PLAN.providers.length).toBeGreaterThan(0);
+    expect(SAMPLE_PLAN.providers.length).toBeGreaterThan(0);
+    expect(SAMPLE_PLAN.monthlyCredits).toBe(0);
+  });
+
+  it("charges one credit per phrase per provider", () => {
+    expect(creditsForRun(10, ["openai", "perplexity"])).toBe(20);
+  });
+});
+
+describe("locales", () => {
+  const products = [
+    { externalId: "1", title: "Merino Runner", category: "Shoes", priceCents: 18900 },
+    { externalId: "2", title: "Trail Cap", category: "Caps", priceCents: 3900 },
+    { externalId: "3", title: "Wool Jacket", category: "Shoes", priceCents: 44900 },
+  ];
+
+  it("asks the home market first and bounds the list by the plan", () => {
+    expect(localesForCountry("CH", 3)).toEqual(["de-CH", "en-CH", "fr-CH"]);
+    expect(localesForCountry("DE", 1)).toEqual(["de-DE"]);
+    expect(localesForCountry(null, 1)).toEqual(["de-CH"]);
+  });
+
+  it("varies the phrase text per locale", () => {
+    const prompts = generatePrompts(
+      { brandName: "Testbrand", domain: "test.ch", locales: ["de-CH", "fr-CH"], products },
+      60,
+    );
+    expect(new Set(prompts.map((prompt) => prompt.locale))).toEqual(new Set(["de-CH", "fr-CH"]));
+    expect(new Set(prompts.map((prompt) => `${prompt.locale}|${prompt.text}`)).size).toBe(prompts.length);
+  });
+
+  it("covers every product with a buying phrase when the budget allows", () => {
+    const prompts = generatePrompts(
+      { brandName: "Testbrand", domain: "test.ch", locales: ["de-CH"], products },
+      500,
+    );
+    const covered = new Set(prompts.filter((prompt) => prompt.externalId).map((prompt) => prompt.externalId));
+    expect(covered.size).toBe(products.length);
   });
 });

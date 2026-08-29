@@ -4,11 +4,11 @@ import { notFound } from "next/navigation";
 import { DimensionList, ScoreDial, StatusIcon, verdictFromStatus } from "@/components/score";
 import { AGENT_INTERFACES, agentVerdicts, buildSignalLookup } from "@/lib/rubric/agents";
 import { BadgeSnippet } from "@/components/badge-snippet";
-import { DeepAuditButton } from "@/components/deep-audit-button";
+import { CheckoutButton } from "@/components/checkout-button";
 import { prisma } from "@/lib/db";
 import { SIGNALS } from "@/lib/rubric/signals";
 import { DIMENSIONS, type DimensionId, type DimensionScore } from "@/lib/rubric/types";
-import { absoluteUrl, DEEP_AUDIT_PRICE_CHF, SITE_NAME } from "@/lib/site";
+import { absoluteUrl, MONITOR_PRICE_CHF, SITE_NAME } from "@/lib/site";
 
 export const revalidate = 3600;
 
@@ -79,45 +79,50 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
   };
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-14">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      <section className="flex flex-col gap-8 sm:flex-row sm:items-center">
-        <ScoreDial score={scan.score ?? 0} grade={scan.grade ?? "F"} />
-        <div className="space-y-3">
-          <h1 className="text-3xl font-semibold tracking-tight">Is {brand.name} agent-ready?</h1>
-          <p className="text-muted">
-            <a href={`https://${brand.domain}`} rel="nofollow noopener" className="underline decoration-border">
-              {brand.domain}
-            </a>
-            {brand.platform ? ` · ${brand.platform}` : ""} · scanned{" "}
-            {new Date(scan.createdAt).toISOString().slice(0, 10)} · rubric v{scan.rubricVersion} · {scan.urlsFetched}{" "}
-            read-only requests
-          </p>
-          <div className="flex flex-wrap gap-3 text-sm">
-            <DeepAuditButton domain={brand.domain} />
-            <Link href="/methodology" className="rounded-lg border border-border px-4 py-2">
-              How this is measured
-            </Link>
+      <section className="border-b border-rule pb-8">
+        <p className="eyebrow">Agent-readiness report · rubric v{scan.rubricVersion}</p>
+        <div className="mt-3 flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-3">
+            <h1 className="font-serif text-4xl leading-tight tracking-tight">Is {brand.name} agent-ready?</h1>
+            <p className="text-sm text-muted">
+              <a href={`https://${brand.domain}`} rel="nofollow noopener" className="link-underline">
+                {brand.domain}
+              </a>
+              {brand.platform ? ` · ${brand.platform}` : ""} · scanned{" "}
+              <span className="tabular">{new Date(scan.createdAt).toISOString().slice(0, 10)}</span> ·{" "}
+              {scan.urlsFetched} read-only requests
+            </p>
+            <div className="flex flex-wrap items-center gap-4 text-sm">
+              <CheckoutButton domain={brand.domain} />
+              <Link href="/methodology" className="link-underline">
+                How this is measured
+              </Link>
+            </div>
           </div>
+          <ScoreDial score={scan.score ?? 0} grade={scan.grade ?? "F"} />
         </div>
       </section>
 
-      <section className="grid gap-8 sm:grid-cols-2">
-        <div className="rounded-xl border border-border bg-surface p-5">
-          <h2 className="mb-4 font-semibold">Readiness by dimension</h2>
-          <DimensionList dimensions={dimensions} />
+      <section className="grid gap-10 sm:grid-cols-2">
+        <div>
+          <h2 className="eyebrow border-b border-border pb-2">Readiness by dimension</h2>
+          <div className="mt-3">
+            <DimensionList dimensions={dimensions} />
+          </div>
         </div>
-        <div className="rounded-xl border border-border bg-surface p-5">
-          <h2 className="mb-4 font-semibold">Score history</h2>
+        <div>
+          <h2 className="eyebrow border-b border-border pb-2">Score history</h2>
           {history.length <= 1 ? (
-            <p className="text-sm text-muted">First scan. Re-scan in a month to see whether anything moved.</p>
+            <p className="mt-3 text-sm text-muted">First scan. Re-scan in a month to see whether anything moved.</p>
           ) : (
-            <ul className="space-y-2 text-sm">
+            <ul className="mt-3 divide-y divide-border text-sm">
               {history.map((entry) => (
-                <li key={entry.createdAt.toISOString()} className="flex justify-between">
-                  <span className="text-muted">{entry.createdAt.toISOString().slice(0, 10)}</span>
-                  <span className="font-mono">
+                <li key={entry.createdAt.toISOString()} className="flex justify-between py-2.5 first:pt-0">
+                  <span className="tabular text-muted">{entry.createdAt.toISOString().slice(0, 10)}</span>
+                  <span className="tabular">
                     {entry.score} ({entry.grade})
                   </span>
                 </li>
@@ -128,22 +133,20 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
       </section>
 
       <section className="space-y-6">
-        <h2 className="text-xl font-semibold">What we measured</h2>
+        <h2 className="border-b border-rule pb-2 text-2xl">What we measured</h2>
         {(Object.keys(DIMENSIONS) as DimensionId[]).map((dimensionId) => {
           const rows = scan.signals.filter((signal) => signal.dimension === dimensionId);
           if (rows.length === 0) return null;
           return (
-            <div key={dimensionId} className="overflow-hidden rounded-xl border border-border">
-              <div className="bg-surface px-4 py-3">
-                <h3 className="font-medium">{DIMENSIONS[dimensionId].label}</h3>
-              </div>
+            <div key={dimensionId}>
+              <h3 className="eyebrow border-b border-border pb-2">{DIMENSIONS[dimensionId].label}</h3>
               <ul className="divide-y divide-border">
                 {rows.map((row) => {
                   const definition = SIGNALS.find((signal) => signal.id === row.signalId);
                   return (
-                    <li key={row.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+                    <li key={row.id} className="flex flex-wrap items-center gap-3 py-2.5 text-sm">
                       <StatusIcon verdict={verdictFromStatus(row.status)} />
-                      <span className="font-medium">{definition?.title ?? row.signalId}</span>
+                      <span>{definition?.title ?? row.signalId}</span>
                     </li>
                   );
                 })}
@@ -155,25 +158,25 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
 
       <section className="space-y-6">
         <div className="space-y-2">
-          <h2 className="text-xl font-semibold">Which AI agents can use {brand.name}?</h2>
-          <p className="max-w-3xl text-sm text-muted">
+          <h2 className="border-b border-rule pb-2 text-2xl">Which AI agents can use {brand.name}?</h2>
+          <p className="max-w-3xl text-sm leading-relaxed text-muted">
             Not every agent needs the same things. A research agent only has to read the page; a shopping agent has to
             reach a payable checkout; an MCP client needs a tool endpoint to call. Below is what {brand.domain} supports
             per class of agent, measured from public HTTP responses.
           </p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-x-10 gap-y-8 sm:grid-cols-2">
           {verdicts.map(({ agent, verdict, met, missing, degraded }) => (
-            <article key={agent.id} className="space-y-3 rounded-xl border border-border bg-surface p-5">
+            <article key={agent.id} className="space-y-3 border-t border-border pt-4">
               <div className="flex items-start gap-3">
-                <StatusIcon verdict={verdict} size={24} />
+                <StatusIcon verdict={verdict} size={22} />
                 <div>
-                  <h3 className="font-medium">{agent.label}</h3>
+                  <h3 className="font-serif text-lg leading-snug">{agent.label}</h3>
                   <p className="text-xs text-muted">{agent.examples}</p>
                 </div>
               </div>
-              <p className="text-sm text-muted">{agent.description}</p>
-              <p className="text-sm">
+              <p className="text-sm leading-relaxed text-muted">{agent.description}</p>
+              <p className="text-sm leading-relaxed">
                 {verdict === "ok"
                   ? agent.worksNote
                   : verdict === "unknown"
@@ -194,55 +197,52 @@ export default async function SitePage({ params }: { params: Promise<{ slug: str
 
       <section className="space-y-4">
         <div className="space-y-2">
-          <h2 className="text-xl font-semibold">Machine interfaces & AI visibility (SEO/GEO)</h2>
-          <p className="max-w-3xl text-sm text-muted">
+          <h2 className="border-b border-rule pb-2 text-2xl">Machine interfaces & AI visibility (SEO/GEO)</h2>
+          <p className="max-w-3xl text-sm leading-relaxed text-muted">
             Classic SEO decides whether people find {brand.name} in a search engine. GEO — generative engine
             optimisation — decides whether an LLM can read, quote and transact with it. These are the interfaces that
             decide the second one.
           </p>
         </div>
-        <div className="overflow-hidden rounded-xl border border-border">
-          <ul className="divide-y divide-border">
-            {interfaces.map((row) => (
-              <li key={row.id} className="flex items-start gap-3 px-4 py-3">
-                <StatusIcon verdict={row.verdict} />
-                <div>
-                  <p className="font-medium">{row.label}</p>
-                  <p className="text-sm text-muted">{row.description}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <ul className="divide-y divide-border border-t border-border">
+          {interfaces.map((row) => (
+            <li key={row.id} className="flex items-start gap-3 py-3">
+              <StatusIcon verdict={row.verdict} />
+              <div>
+                <p className="text-sm">{row.label}</p>
+                <p className="text-sm leading-relaxed text-muted">{row.description}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {failing > 0 ? (
-        <section className="rounded-xl border border-border bg-surface p-5">
-          <h2 className="font-semibold">
-            {failing} fixable {failing === 1 ? "issue" : "issues"} — fix list is in the paid report
+        <section className="border-t-2 border-foreground bg-raised p-6">
+          <h2 className="text-xl">
+            {failing} {failing === 1 ? "gap" : "gaps"} between {brand.name} and the AI answers
           </h2>
-          <p className="mt-2 text-sm text-muted">
-            The measurements above are public. The remediation detail is not: which files to publish, the exact markup
-            and headers to change, and the order that fixes the most impactful gaps first. That ships in the
-            report for CHF {DEEP_AUDIT_PRICE_CHF}, together with a deep crawl of up to 500 URLs.
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
+            Every measurement above is public. Monitoring adds what to do about it: the fix list for these gaps, plus
+            weekly checks of how often ChatGPT and Perplexity name your products — and which shops they name instead.
           </p>
           <div className="mt-4">
-            <DeepAuditButton domain={brand.domain} label={`Unlock the fix list — CHF ${DEEP_AUDIT_PRICE_CHF}`} />
+            <CheckoutButton domain={brand.domain} />
           </div>
         </section>
       ) : null}
 
       <section className="grid gap-6 sm:grid-cols-2">
         <BadgeSnippet slug={slug} score={scan.score ?? 0} />
-        <div className="rounded-xl border border-border bg-surface p-5">
-          <h2 className="font-semibold">Want the full picture?</h2>
-          <p className="mt-2 text-sm text-muted">
-            The deep audit crawls up to 500 URLs, checks every product template, compares you against three competitors
-            and returns the prioritised fix list — which files to add, which markup to change, in what order.
+        <div className="border-t border-border pt-4">
+          <h2 className="text-xl">Are your products in the answers?</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            Import your catalogue and we ask the major models real buying questions about your products, per market,
+            then report how often you are named, how often you are linked, and who outranks you.
           </p>
-          <p className="mt-3 text-sm">CHF {DEEP_AUDIT_PRICE_CHF} one-off, delivered within an hour.</p>
+          <p className="mt-3 text-sm">From CHF {MONITOR_PRICE_CHF} per month, weekly.</p>
           <div className="mt-4">
-            <DeepAuditButton domain={brand.domain} />
+            <CheckoutButton domain={brand.domain} />
           </div>
         </div>
       </section>

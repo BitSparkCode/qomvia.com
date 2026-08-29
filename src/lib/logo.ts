@@ -1,35 +1,35 @@
 /**
- * The Qomvia mark: a robot head whose visor is a scanning bar, drawn on a 32×32
- * grid. Defined once as markup so the React header, the favicon, the embeddable
- * badge and the Open Graph images all render the identical geometry.
+ * The Qomvia mark: a friendly agent — an outlined robot head with round eyes, a
+ * smile and a signal antenna, drawn on a 32×32 grid. Defined once as markup so
+ * the React header, the favicon, the embeddable badge and the Open Graph images
+ * all render the identical geometry.
  */
 export type LogoColors = {
-  /** Head plate fill. */
+  /** Head fill, kept light so the mark never reads as a solid black block. */
   plate?: string;
-  /** Outline, antenna and visor colour. */
+  /** Outline, eyes and smile. */
+  ink?: string;
+  /** Antenna signal, the single spot of colour. */
   accent?: string;
-  /** Eye colour, sitting on top of the visor. */
-  eye?: string;
 };
 
 const DEFAULTS: Required<LogoColors> = {
-  plate: "#0e1218",
-  accent: "#38e08a",
-  eye: "#07090c",
+  plate: "#ffffff",
+  ink: "#17181b",
+  accent: "#1d4d3e",
 };
 
 export function robotHeadInner(colors: LogoColors = {}): string {
-  const { plate, accent, eye } = { ...DEFAULTS, ...colors };
+  const { plate, ink, accent } = { ...DEFAULTS, ...colors };
   return [
-    `<path d="M16 2.5v3.5" stroke="${accent}" stroke-width="2" stroke-linecap="round"/>`,
-    `<circle cx="16" cy="2.5" r="2" fill="${accent}"/>`,
-    `<rect x="1" y="13" width="3" height="7" rx="1.5" fill="${accent}"/>`,
-    `<rect x="28" y="13" width="3" height="7" rx="1.5" fill="${accent}"/>`,
-    `<rect x="5" y="6" width="22" height="21" rx="6" fill="${plate}" stroke="${accent}" stroke-width="2"/>`,
-    `<rect x="9" y="12" width="14" height="7" rx="3.5" fill="${accent}"/>`,
-    `<circle cx="12.8" cy="15.5" r="1.7" fill="${eye}"/>`,
-    `<circle cx="19.2" cy="15.5" r="1.7" fill="${eye}"/>`,
-    `<path d="M12 23h8" stroke="${accent}" stroke-width="2" stroke-linecap="round"/>`,
+    `<path d="M16 3.6v3.4" stroke="${ink}" stroke-width="1.8" stroke-linecap="round"/>`,
+    `<circle cx="16" cy="2.6" r="2" fill="${accent}"/>`,
+    `<path d="M3.4 14.5v3.6" stroke="${ink}" stroke-width="1.8" stroke-linecap="round"/>`,
+    `<path d="M28.6 14.5v3.6" stroke="${ink}" stroke-width="1.8" stroke-linecap="round"/>`,
+    `<rect x="6" y="7" width="20" height="18.4" rx="7.5" fill="${plate}" stroke="${ink}" stroke-width="1.8"/>`,
+    `<circle cx="12.6" cy="15" r="1.9" fill="${ink}"/>`,
+    `<circle cx="19.4" cy="15" r="1.9" fill="${ink}"/>`,
+    `<path d="M12.4 19.4c1.2 1.6 2.3 2.3 3.6 2.3s2.4-.7 3.6-2.3" stroke="${ink}" stroke-width="1.8" stroke-linecap="round" fill="none"/>`,
   ].join("");
 }
 

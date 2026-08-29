@@ -10,7 +10,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-lg border border-border px-4 py-2 text-sm disabled:opacity-60"
+      className="border border-border px-4 py-2 text-sm disabled:opacity-60"
     >
       {pending ? "Submitting…" : "Opt out"}
     </button>
@@ -24,13 +24,13 @@ export function OptOutForm() {
       <input
         name="domain"
         placeholder="yourstore.com"
-        className="w-full rounded-lg border border-border bg-surface px-4 py-3 outline-none focus:border-accent"
+        className="input"
       />
       <input
         name="email"
         type="email"
         placeholder="you@yourstore.com"
-        className="w-full rounded-lg border border-border bg-surface px-4 py-3 outline-none focus:border-accent"
+        className="input"
       />
       <SubmitButton />
       {state.error ? <p className="text-sm text-bad">{state.error}</p> : null}

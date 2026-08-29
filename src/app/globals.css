@@ -1,35 +1,143 @@
 @import "tailwindcss";
 
 :root {
-  --background: #07090c;
-  --surface: #0e1218;
-  --border: #1e2632;
-  --foreground: #e8edf4;
-  --muted: #8d9bad;
-  --accent: #38e08a;
-  --warn: #ffcc4d;
-  --bad: #ff6b6b;
+  --background: #fbfaf7;
+  --surface: #ffffff;
+  --raised: #f4f2ed;
+  --border: #e0dcd2;
+  --rule: #cfc9bb;
+  --foreground: #17181b;
+  --muted: #6a675f;
+  --accent: #1d4d3e;
+  --warn: #8a6316;
+  --bad: #9a2b2b;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
+  --color-raised: var(--raised);
   --color-border: var(--border);
+  --color-rule: var(--rule);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-warn: var(--warn);
   --color-bad: var(--bad);
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-serif: var(--font-newsreader), "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  font-feature-settings: "cv05" 1, "ss03" 1;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
   color: inherit;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+
+@layer components {
+  /* Section label: the small caps line that opens an editorial section. */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* Data figures should align in columns like a printed table. */
+  .tabular {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .link-underline {
+    text-decoration: underline;
+    text-decoration-color: var(--rule);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+  }
+
+  .link-underline:hover {
+    text-decoration-color: var(--accent);
+  }
+
+  /* Flat, square controls: the editorial look has no pill buttons or glows. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: var(--foreground);
+    color: var(--background);
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+    letter-spacing: 0.02em;
+    border: 1px solid var(--foreground);
+  }
+
+  .btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: transparent;
+    color: var(--foreground);
+    padding: 0.625rem 1rem;
+    font-size: 0.8125rem;
+    border: 1px solid var(--rule);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--foreground);
+  }
+
+  .btn-secondary:disabled {
+    opacity: 0.5;
+  }
+
+  .input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    padding: 0.75rem 1rem;
+    outline: none;
+  }
+
+  .input:focus {
+    border-color: var(--accent);
+  }
+
+  .input::placeholder {
+    color: var(--muted);
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
 }
